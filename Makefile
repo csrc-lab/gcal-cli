@@ -1,6 +1,7 @@
 CXX=g++
-CXXFLAGS=-std=c++11 -Iinclude
-SRC=main.cpp
+CXXFLAGS=-std=c++11 -I./include
+SRC_DIR=./src
+SRC=$(SRC_DIR)/main.cpp $(SRC_DIR)/ConfigManager.cpp # Add new .cpp files here
 OBJ=$(SRC:.cpp=.o)
 EXEC=gcal-cli
 
@@ -10,4 +11,4 @@ $(EXEC): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f $(OBJ) $(EXEC)
+	rm -f $(SRC_DIR)/*.o $(EXEC)

@@ -1,5 +1,5 @@
 #include <CLI11.hpp>
-
+#include "ConfigManager.h"
 /*
 Supported command
 config
@@ -31,11 +31,11 @@ int main(int argc, char **argv) {
     configApp->require_subcommand(1);
     auto configShow =
         configApp->add_subcommand("show", "Show the current configuration");
-    configShow->callback(
-        []() { std::cout << "Show the current configuration" << std::endl; });
+    configShow->callback([](){ ConfigManager::showConfiguration(); });
+
     auto configSet =
         configApp->add_subcommand("set", "Set the configuration");
-    configSet->callback([]() { std::cout << "Set the configuration" << std::endl; });
+    configSet->callback([](){ ConfigManager::setConfiguration("New Config"); }); // Modify this line to accept user input if needed
 
     app.add_subcommand("event", "Manage events");
     app.add_subcommand("task", "Manage tasks");
