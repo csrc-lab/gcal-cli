@@ -26,10 +26,10 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         std::cerr << "Error: Credential file not found" << std::endl;
         return;
     }
-    Credential cred(localCredPath);
-    cred.showCredential();
+    GoogleOauth oauth(localCredPath);
+    oauth.showCredential();
 
-    std::string authorization_url = cred.getAuthorizationUrl();
+    std::string authorization_url = oauth.getAuthorizationUrl();
 
     std::cout << "\033[1;31mPlease copy the following URL and paste it into "
                  "your browser "
@@ -40,10 +40,10 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
     std::cout << "\033[1;31mEnter the code: \033[0m";
     std::cin >> code;
 
-    std::string access_token = cred.getAccessToken(code);
+    std::string access_token = oauth.getAccessToken(code);
     std::cout << "Access Token: " << access_token << std::endl;
 
-    std::string refresh_token = cred.getRefreshToken();
+    std::string refresh_token = oauth.getRefreshToken();
     std::cout << "Refresh Token: " << refresh_token << std::endl;
 
     TokenManager tokenManager;

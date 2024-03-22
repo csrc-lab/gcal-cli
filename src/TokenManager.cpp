@@ -5,14 +5,14 @@
 
 void TokenManager::saveTokens(const std::string& token,
                               const std::string& refreshToken) {
-    std::ofstream tokenFile(tokenFile, std::ios::binary);
+    std::ofstream tokenFile(tokenFileName, std::ios::binary);
 
     tokenFile << token << std::endl << refreshToken;
     tokenFile.close();
 }
 
 std::string TokenManager::getToken() {
-    std::ifstream tokenFile(tokenFile, std::ios::binary);
+    std::ifstream tokenFile(tokenFileName, std::ios::binary);
     std::string token, refreshToken;
 
     tokenFile >> token >> refreshToken;
@@ -22,7 +22,7 @@ std::string TokenManager::getToken() {
 }
 
 std::string TokenManager::getRefreshToken() {
-    std::ifstream tokenFile(tokenFile, std::ios::binary);
+    std::ifstream tokenFile(tokenFileName, std::ios::binary);
     std::string token, refreshToken;
 
     tokenFile >> token >> refreshToken;

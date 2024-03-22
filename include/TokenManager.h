@@ -5,11 +5,11 @@
 
 class TokenManager {
    private:
-    std::string tokenFile = "tokens.dat";
+    std::string tokenFileName = "tokens.dat";
 
    public:
     void showToken();
-    void saveToken(const std::string &token, const std::string &refreshToken);
+    void saveTokens(const std::string &token, const std::string &refreshToken);
     std::string getToken();
     std::string getRefreshToken();
 };
