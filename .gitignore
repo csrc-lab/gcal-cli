@@ -33,3 +33,9 @@
 
 # vscode
 .vscode
+
+# credentials
+credential.json
+
+# build
+build

@@ -1,4 +1,5 @@
 #include <CLI11.hpp>
+
 #include "ConfigManager.h"
 /*
 Supported command
@@ -31,11 +32,14 @@ int main(int argc, char **argv) {
     configApp->require_subcommand(1);
     auto configShow =
         configApp->add_subcommand("show", "Show the current configuration");
-    configShow->callback([](){ ConfigManager::showConfiguration(); });
+    configShow->callback([]() { ConfigManager::showConfiguration(); });
 
-    auto configSet =
-        configApp->add_subcommand("set", "Set the configuration");
-    configSet->callback([](){ ConfigManager::setConfiguration("New Config"); }); // Modify this line to accept user input if needed
+    auto configSet = configApp->add_subcommand("set", "Set the configuration");
+    std::string credPath;
+    configSet->add_option<std::string>("-f,--file", credPath,
+                                       "Credential file path");
+    configSet->callback(
+        [&credPath]() { ConfigManager::setConfiguration(credPath); });
 
     app.add_subcommand("event", "Manage events");
     app.add_subcommand("task", "Manage tasks");
