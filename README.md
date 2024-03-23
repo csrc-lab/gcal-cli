@@ -9,7 +9,7 @@ mkdir build
 cd build
 cmake ..
 
-make
+cmake --build .
 ```
 
 ## Config Setting

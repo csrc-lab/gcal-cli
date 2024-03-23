@@ -14,6 +14,12 @@ bool fileExists(const std::string& name) {
 void ConfigManager::showConfiguration() {
     // Implement the logic to show configuration
     std::cout << "Show the current configuration" << std::endl;
+    TokenManager tokenManager;
+    std::string token = tokenManager.getToken();
+    std::string refreshToken = tokenManager.getRefreshToken();
+
+    std::cout << "Access Token: " << token << std::endl;
+    std::cout << "Refresh Token: " << refreshToken << std::endl;
 }
 
 void ConfigManager::setConfiguration(const std::string& credPath) {

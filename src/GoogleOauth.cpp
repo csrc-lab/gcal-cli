@@ -52,6 +52,7 @@ std::string GoogleOauth::getAccessToken(const std::string &code) {
     std::cout << "Get the access token using the code: " << code << std::endl;
 
     const std::string tokenEndpoint = "https://oauth2.googleapis.com/token";
+
     cpr::Response r =
         cpr::Post(cpr::Url{tokenEndpoint},
                   cpr::Payload{{"code", code},
@@ -63,7 +64,6 @@ std::string GoogleOauth::getAccessToken(const std::string &code) {
     if (r.status_code == cpr::status::HTTP_OK) {
         // Parse the JSON response
         auto jsonResponse = nlohmann::json::parse(r.text);
-        // Here, you can extract the access token, refresh token, etc., from
         // jsonResponse
         std::cout << "Access Token: " << jsonResponse["access_token"]
                   << std::endl;
