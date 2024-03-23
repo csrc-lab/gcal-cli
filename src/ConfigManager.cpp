@@ -52,8 +52,12 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
     std::string refresh_token = oauth.getRefreshToken();
     std::cout << "Refresh Token: " << refresh_token << std::endl;
 
+    std::string client_id = oauth.getClientId();
+    std::string client_secret = oauth.getClientSecret();
+
     TokenManager tokenManager;
-    tokenManager.saveTokens(access_token, refresh_token);
+    tokenManager.saveTokens(client_id, client_secret, access_token,
+                            refresh_token);
 
     std::cout << "Configuration set successfully" << std::endl;
 }

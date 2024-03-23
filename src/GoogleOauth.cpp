@@ -8,6 +8,8 @@
 #include <sstream>
 #include <vector>
 
+#include "TokenManager.h"
+
 GoogleOauth::GoogleOauth(const std::string &credPath) {
     // Implement the logic to read the credential from the file
     std::cout << "Read the credential from the file: " << credPath << std::endl;
@@ -78,3 +80,52 @@ std::string GoogleOauth::getAccessToken(const std::string &code) {
 }
 
 std::string GoogleOauth::getRefreshToken() { return this->refreshToken; }
+
+std::string GoogleOauth::getClientId() { return this->clientId; }
+
+std::string GoogleOauth::getClientSecret() { return this->clientSecret; }
+
+std::string GoogleOauth::refreshTokens() {
+    std::cout << "Refreshing the access token using the refresh token."
+              << std::endl;
+
+    // Use TokenManager to get the refresh token
+    TokenManager tokenManager;
+    this->refreshToken = tokenManager.getRefreshToken();
+    this->clientId = tokenManager.getClientId();
+    this->clientSecret = tokenManager.getClientSecret();
+
+    const std::string tokenEndpoint = "https://oauth2.googleapis.com/token";
+
+    // Make a POST request to the Google OAuth 2.0 token endpoint
+    cpr::Response r =
+        cpr::Post(cpr::Url{tokenEndpoint},
+                  cpr::Payload{{"client_id", clientId},
+                               {"client_secret", clientSecret},
+                               {"refresh_token", this->refreshToken},
+                               {"grant_type", "refresh_token"}});
+
+    if (r.status_code == cpr::status::HTTP_OK) {
+        // Parse the JSON response
+        auto jsonResponse = nlohmann::json::parse(r.text);
+
+        // Extract the new access token and optionally the new refresh token
+        std::cout << "New Access Token: " << jsonResponse["access_token"]
+                  << std::endl;
+        this->token = jsonResponse["access_token"];
+
+        // Some responses may include a new refresh token
+        if (jsonResponse.contains("refresh_token")) {
+            this->refreshToken = jsonResponse["refresh_token"];
+        }
+
+        tokenManager.saveTokens(clientId, clientSecret, this->token,
+                                this->refreshToken);
+
+        return this->token;
+    } else {
+        std::cerr << "Failed to refresh the access token: " << r.status_code
+                  << std::endl;
+        return "";  // Return an empty string or handle the error as needed
+    }
+}

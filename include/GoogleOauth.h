@@ -24,6 +24,9 @@ class GoogleOauth {
     std::string getAuthorizationUrl();
     std::string getAccessToken(const std::string &code);
     std::string getRefreshToken();
+    std::string getClientId();
+    std::string getClientSecret();
+    std::string refreshTokens();
 };
 
 #endif
