@@ -46,18 +46,35 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
     std::cout << "\033[1;31mEnter the code: \033[0m";
     std::cin >> code;
 
-    std::string access_token = oauth.getAccessToken(code);
-    std::cout << "Access Token: " << access_token << std::endl;
+    try {
+        GoogleTokens tokens = oauth.getAccessToken(code);
+        std::cout << "Access Token: " << tokens.token << std::endl;
+        std::cout << "Refresh Token: " << tokens.refreshToken << std::endl;
 
-    std::string refresh_token = oauth.getRefreshToken();
-    std::cout << "Refresh Token: " << refresh_token << std::endl;
+        TokenManager tokenManager;
+        tokenManager.saveTokens(tokens);
 
-    std::string client_id = oauth.getClientId();
-    std::string client_secret = oauth.getClientSecret();
+        std::cout << "Configuration set successfully" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return;
+    }
+}
 
+void refreshConfiguration() {
     TokenManager tokenManager;
-    tokenManager.saveTokens(client_id, client_secret, access_token,
-                            refresh_token);
+    GoogleTokens tokens = tokenManager.getTokens();
+    GoogleOauth oauth(tokens);
+    try {
+        GoogleTokens newTokens = oauth.refreshTokens();
+        std::cout << "Access Token: " << tokens.token << std::endl;
+        std::cout << "Refresh Token: " << tokens.refreshToken << std::endl;
 
-    std::cout << "Configuration set successfully" << std::endl;
+        tokenManager.saveTokens(tokens);
+
+        std::cout << "Configuration refreshed successfully" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return;
+    }
 }

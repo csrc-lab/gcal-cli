@@ -4,9 +4,10 @@
 #include <string>
 
 class ConfigManager {
-public:
+   public:
     static void showConfiguration();
     static void setConfiguration(const std::string &config);
+    static void refreshConfiguration();
 };
 
-#endif // CONFIGMANAGER_H
+#endif  // CONFIGMANAGER_H

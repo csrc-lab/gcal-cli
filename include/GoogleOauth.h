@@ -1,8 +1,10 @@
-#ifndef CREDS_H
-#define CREDS_H
+#ifndef GOOGLEOAUTH_H
+#define GOOGLEOAUTH_H
 
 #include <string>
 #include <vector>
+
+#include "TokenManager.h"
 
 class GoogleOauth {
    private:
@@ -18,15 +20,16 @@ class GoogleOauth {
     std::string refreshToken;
 
    public:
+    GoogleOauth(GoogleTokens &tokens);
     GoogleOauth(const std::string &credPath);
     void showCredential();
     void setCredential(const std::string &cred);
     std::string getAuthorizationUrl();
-    std::string getAccessToken(const std::string &code);
+    GoogleTokens getAccessToken(const std::string &code);
     std::string getRefreshToken();
     std::string getClientId();
     std::string getClientSecret();
-    std::string refreshTokens();
+    GoogleTokens refreshTokens();
 };
 
 #endif

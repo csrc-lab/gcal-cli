@@ -28,6 +28,13 @@ GoogleOauth::GoogleOauth(const std::string &credPath) {
     }
 }
 
+GoogleOauth::GoogleOauth(GoogleTokens &tokens) {
+    this->clientId = tokens.clientId;
+    this->clientSecret = tokens.clientSecret;
+    this->token = tokens.token;
+    this->refreshToken = tokens.refreshToken;
+}
+
 void GoogleOauth::showCredential() {
     std::cout << "Show the current credential" << std::endl;
 
@@ -50,7 +57,7 @@ std::string GoogleOauth::getAuthorizationUrl() {
            "&access_type=offline&prompt=consent";
 }
 
-std::string GoogleOauth::getAccessToken(const std::string &code) {
+GoogleTokens GoogleOauth::getAccessToken(const std::string &code) {
     std::cout << "Get the access token using the code: " << code << std::endl;
 
     const std::string tokenEndpoint = "https://oauth2.googleapis.com/token";
@@ -64,19 +71,16 @@ std::string GoogleOauth::getAccessToken(const std::string &code) {
                                {"grant_type", "authorization_code"}});
 
     if (r.status_code == cpr::status::HTTP_OK) {
-        // Parse the JSON response
         auto jsonResponse = nlohmann::json::parse(r.text);
-        // jsonResponse
-        std::cout << "Access Token: " << jsonResponse["access_token"]
-                  << std::endl;
         this->token = jsonResponse["access_token"];
         this->refreshToken = jsonResponse["refresh_token"];
     } else {
         std::cerr << "Failed to exchange authorization code: " << r.status_code
                   << std::endl;
+        throw std::runtime_error("Failed to exchange authorization code");
     }
 
-    return this->token;
+    return {clientId, clientSecret, token, refreshToken};
 }
 
 std::string GoogleOauth::getRefreshToken() { return this->refreshToken; }
@@ -85,15 +89,14 @@ std::string GoogleOauth::getClientId() { return this->clientId; }
 
 std::string GoogleOauth::getClientSecret() { return this->clientSecret; }
 
-std::string GoogleOauth::refreshTokens() {
+GoogleTokens GoogleOauth::refreshTokens() {
     std::cout << "Refreshing the access token using the refresh token."
               << std::endl;
 
-    // Use TokenManager to get the refresh token
-    TokenManager tokenManager;
-    this->refreshToken = tokenManager.getRefreshToken();
-    this->clientId = tokenManager.getClientId();
-    this->clientSecret = tokenManager.getClientSecret();
+    if (this->refreshToken.empty()) {
+        std::cerr << "Error: Refresh token is empty" << std::endl;
+        throw std::runtime_error("Refresh token is empty");
+    }
 
     const std::string tokenEndpoint = "https://oauth2.googleapis.com/token";
 
@@ -118,14 +121,11 @@ std::string GoogleOauth::refreshTokens() {
         if (jsonResponse.contains("refresh_token")) {
             this->refreshToken = jsonResponse["refresh_token"];
         }
-
-        tokenManager.saveTokens(clientId, clientSecret, this->token,
-                                this->refreshToken);
-
-        return this->token;
     } else {
         std::cerr << "Failed to refresh the access token: " << r.status_code
                   << std::endl;
-        return "";  // Return an empty string or handle the error as needed
+        throw std::runtime_error("Failed to refresh the access token");
     }
+
+    return {clientId, clientSecret, token, refreshToken};
 }
