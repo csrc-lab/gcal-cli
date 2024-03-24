@@ -10,6 +10,6 @@ class GoogleEventsAPI : public ApiBase {
 public:
     GoogleEventsAPI();
     void list() override;
-    void create() override;
+    void add() override;
 };
 #endif

@@ -4,7 +4,7 @@
 class ApiBase {
 public:
     virtual void list() = 0;
-    virtual void create() = 0;
+    virtual void add() = 0;
 };
 
 #endif // APIBASE_H

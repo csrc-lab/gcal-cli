@@ -10,6 +10,6 @@ void GoogleEventsAPI::list() {
     std::cout << "Listing events" << std::endl;
 }
 
-void GoogleEventsAPI::create() {
+void GoogleEventsAPI::add() {
     std::cout << "Creating event" << std::endl;
 }

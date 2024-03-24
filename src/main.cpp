@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     auto eventAdd = eventApp->add_subcommand("add", "Add an event");
     eventAdd->callback([]() {
         GoogleEventsAPI googleEventsAPI = GoogleEventsAPI(); 
-        googleEventsAPI.create(); 
+        googleEventsAPI.add(); 
     });
     app.add_subcommand("task", "Manage tasks");
 
