@@ -12,9 +12,4 @@ public:
     void list() override;
     void create() override;
 };
-
-GoogleEventsAPI::GoogleEventsAPI() {
-    TokenManager tokenManager;
-    token = tokenManager.getToken();
-}
 #endif

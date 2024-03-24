@@ -44,8 +44,15 @@ int main(int argc, char **argv) {
     auto *eventApp = app.add_subcommand("event", "Manage events");
     eventApp->require_subcommand(1);
     auto eventList = eventApp->add_subcommand("list", "List events");
-    GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
-    eventList->callback([&googleEventsAPI]() { googleEventsAPI.list(); });
+    eventList->callback([]() {
+        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI(); 
+        googleEventsAPI.list(); 
+    });
+    auto eventAdd = eventApp->add_subcommand("add", "Add an event");
+    eventAdd->callback([]() {
+        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI(); 
+        googleEventsAPI.create(); 
+    });
     app.add_subcommand("task", "Manage tasks");
 
     CLI11_PARSE(app, argc, argv);
