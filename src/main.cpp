@@ -1,6 +1,7 @@
 #include <CLI11.hpp>
 
 #include "ConfigManager.h"
+#include "GoogleEventsAPI.h"
 /*
 Supported command
 config
@@ -22,7 +23,6 @@ int main(int argc, char **argv) {
     CLI::App app{"Google Calendar CLI"};
     argv = app.ensure_utf8(argv);
 
-    std::string filename = "default";
     app.require_subcommand(1);
     auto help = app.add_subcommand("help")->silent();
     help->parse_complete_callback([]() { throw CLI::CallForHelp(); });
@@ -41,7 +41,11 @@ int main(int argc, char **argv) {
     configSet->callback(
         [&credPath]() { ConfigManager::setConfiguration(credPath); });
 
-    app.add_subcommand("event", "Manage events");
+    auto *eventApp = app.add_subcommand("event", "Manage events");
+    eventApp->require_subcommand(1);
+    auto eventList = eventApp->add_subcommand("list", "List events");
+    GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
+    eventList->callback([&googleEventsAPI]() { googleEventsAPI.list(); });
     app.add_subcommand("task", "Manage tasks");
 
     CLI11_PARSE(app, argc, argv);
