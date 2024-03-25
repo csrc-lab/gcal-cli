@@ -6,7 +6,8 @@
 #include <string>
 
 class GoogleEventsAPI : public ApiBase {
-    std::string token;
+private:
+    GoogleTokens googleTokens;
 public:
     GoogleEventsAPI();
     void list() override;
