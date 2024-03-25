@@ -21,7 +21,6 @@ std::string getHomeDirectory() {
 
 TokenManager::TokenManager() {
     tokenFileName = getHomeDirectory() + "/.gcal_cli_tokens";
-    std::cout << "Token file name: " << tokenFileName << std::endl;
 }
 
 void TokenManager::saveTokens(const std::string& clientId,
