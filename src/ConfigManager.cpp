@@ -61,16 +61,16 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
     }
 }
 
-void refreshConfiguration() {
+void ConfigManager::refreshConfiguration() {
     TokenManager tokenManager;
     GoogleTokens tokens = tokenManager.getTokens();
     GoogleOauth oauth(tokens);
     try {
         GoogleTokens newTokens = oauth.refreshTokens();
-        std::cout << "Access Token: " << tokens.token << std::endl;
-        std::cout << "Refresh Token: " << tokens.refreshToken << std::endl;
+        std::cout << "Access Token: " << newTokens.token << std::endl;
+        std::cout << "Refresh Token: " << newTokens.refreshToken << std::endl;
 
-        tokenManager.saveTokens(tokens);
+        tokenManager.saveTokens(newTokens);
 
         std::cout << "Configuration refreshed successfully" << std::endl;
     } catch (const std::exception& e) {
