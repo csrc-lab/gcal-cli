@@ -7,13 +7,13 @@
 
 std::tm TimeParse::getCurrentDateTime() {
     std::time_t t = std::time(nullptr);
-    std::tm *now = std::localtime(&t);
+    std::tm *now = std::gmtime(&t);
     return *now;
 }
 
 std::tm TimeParse::getShiftedDateTime(int days) {
     std::time_t t = std::time(nullptr) + days * 24 * 60 * 60; // Shift by days
-    std::tm *shifted = std::localtime(&t);
+    std::tm *shifted = std::gmtime(&t);
     return *shifted;
 }
 
@@ -46,7 +46,7 @@ std::tm TimeParse::parseRFC3339(const std::string &rfc3339Str) {
     std::tm parsed;
     std::istringstream ss(rfc3339Str);
 
-    ss >> std::get_time(&parsed, "%Y-%m-%dT%H:%M:%S");
+    ss >> std::get_time(&parsed, "%Y-%m-%dT%H:%M");
 
     return parsed;
 }
