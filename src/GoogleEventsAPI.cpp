@@ -30,12 +30,6 @@ void GoogleEventsAPI::list() {
         std::copy_if(rawItems.begin(), rawItems.end(), std::back_inserter(items), [](nlohmann::json item) {
             return item["status"] == "confirmed";
         });
-        // TODO: Sort the events by start time (the current method is not working)
-        std::sort(items.begin(), items.end(), [](nlohmann::json &a, nlohmann::json &b) {
-            std::tm startA = TimeParse::parseRFC3339(a["start"]["dateTime"]);
-            std::tm startB = TimeParse::parseRFC3339(b["start"]["dateTime"]);
-            return std::mktime(&startA) < std::mktime(&startB);
-        });
         std::cout << "Below are the "<< items.size() << " events in the last 30 days:" << std::endl;
         
         for (int i = 1; i <= items.size(); i++) {
