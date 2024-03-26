@@ -18,10 +18,13 @@ void GoogleEventsAPI::list() {
     std::string rfcLast30day = TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-30));
 
     cpr::Response r = cpr::Get(
-        cpr::Url{apiUrl}, 
-        cpr::Header{{"Authorization", "Bearer " + googleTokens.token}, {"Accept", "application/json"}}, 
-        cpr::Parameters{{"timeMin", rfcLast30day}}
-    );
+        cpr::Url{apiUrl},
+        cpr::Header{{"Authorization", "Bearer " + googleTokens.token}, {"Accept", "application/json"}},
+        cpr::Parameters{
+            {"timeMin", rfcLast30day},
+            {"orderBy", "startTime"},
+            {"singleEvents", "true"}
+        });
     if (r.status_code == 200) {
         nlohmann::json j = nlohmann::json::parse(r.text);
         std::vector<nlohmann::json> rawItems = j["items"].get<std::vector<nlohmann::json>>();
@@ -46,6 +49,7 @@ void GoogleEventsAPI::list() {
         list();
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
+        std::cerr << r.text << std::endl;
     }
 }
 
