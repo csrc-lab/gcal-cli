@@ -2,22 +2,6 @@
 
 #include "ConfigManager.h"
 #include "GoogleEventsAPI.h"
-/*
-Supported command
-config
-    show
-    set
-event
-    list
-    add
-    delete
-    update
-task
-    list
-    add
-    delete
-    update
-*/
 
 int main(int argc, char **argv) {
 #ifdef _WIN32
