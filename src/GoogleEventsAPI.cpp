@@ -18,10 +18,13 @@ void GoogleEventsAPI::list() {
     std::string rfcLast30day = TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-30));
 
     cpr::Response r = cpr::Get(
-        cpr::Url{apiUrl}, 
-        cpr::Header{{"Authorization", "Bearer " + googleTokens.token}, {"Accept", "application/json"}}, 
-        cpr::Parameters{{"timeMin", rfcLast30day}}
-    );
+        cpr::Url{apiUrl},
+        cpr::Header{{"Authorization", "Bearer " + googleTokens.token}, {"Accept", "application/json"}},
+        cpr::Parameters{
+            {"timeMin", rfcLast30day},
+            {"orderBy", "startTime"},
+            {"singleEvents", "true"}
+        });
     if (r.status_code == 200) {
         nlohmann::json j = nlohmann::json::parse(r.text);
         std::vector<nlohmann::json> rawItems = j["items"].get<std::vector<nlohmann::json>>();
@@ -29,12 +32,6 @@ void GoogleEventsAPI::list() {
         std::vector<nlohmann::json> items;
         std::copy_if(rawItems.begin(), rawItems.end(), std::back_inserter(items), [](nlohmann::json item) {
             return item["status"] == "confirmed";
-        });
-        // TODO: Sort the events by start time (the current method is not working)
-        std::sort(items.begin(), items.end(), [](nlohmann::json &a, nlohmann::json &b) {
-            std::tm startA = TimeParse::parseRFC3339(a["start"]["dateTime"]);
-            std::tm startB = TimeParse::parseRFC3339(b["start"]["dateTime"]);
-            return std::mktime(&startA) < std::mktime(&startB);
         });
         std::cout << "Below are the "<< items.size() << " events in the last 30 days:" << std::endl;
         
@@ -52,6 +49,7 @@ void GoogleEventsAPI::list() {
         list();
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
+        std::cerr << r.text << std::endl;
     }
 }
 
