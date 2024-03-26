@@ -20,6 +20,10 @@ task
 */
 
 int main(int argc, char **argv) {
+#ifdef _WIN32
+    system("chcp 65001");  // Set the console to UTF-8 mode
+#endif
+
     CLI::App app{"Google Calendar CLI"};
     argv = app.ensure_utf8(argv);
 
@@ -45,13 +49,13 @@ int main(int argc, char **argv) {
     eventApp->require_subcommand(1);
     auto eventList = eventApp->add_subcommand("list", "List events");
     eventList->callback([]() {
-        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI(); 
-        googleEventsAPI.list(); 
+        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
+        googleEventsAPI.list();
     });
     auto eventAdd = eventApp->add_subcommand("add", "Add an event");
     eventAdd->callback([]() {
-        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI(); 
-        googleEventsAPI.add(); 
+        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
+        googleEventsAPI.add();
     });
     app.add_subcommand("task", "Manage tasks");
 
