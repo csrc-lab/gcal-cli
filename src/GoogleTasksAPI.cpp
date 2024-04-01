@@ -38,7 +38,9 @@ GoogleTasksAPI::GoogleTasksAPI() {
     }
 }
 
-void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
+std::vector<nlohmann::json> GoogleTasksAPI::getTasks(bool showCompleted,
+                                                     int daysBefore,
+                                                     int daysAfter) {
     std::string rfcStartDay =
         TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-daysBefore));
     std::string rfcEndDay =
@@ -60,41 +62,46 @@ void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
         nlohmann::json j = nlohmann::json::parse(r.text);
         std::vector<nlohmann::json> items =
             j["items"].get<std::vector<nlohmann::json>>();
-        // Filter out the events with status confirmed only
-        std::cout << "Below are the " << items.size() << " tasks in the last "
-                  << daysBefore << " days and the following " << daysAfter
-                  << " days:" << std::endl;
 
         std::sort(items.begin(), items.end(),
                   [](const nlohmann::json& a, const nlohmann::json& b) {
                       return a["due"].get<std::string>() <
                              b["due"].get<std::string>();
                   });
-
-        int todoCnt = 0;
-        for (int i = 0; i < items.size(); i++) {
-            std::string dueTime = items[i]["due"];
-            std::string title = items[i]["title"];
-            bool isCompleted = items[i].contains("status") &&
-                               items[i]["status"] == "completed";
-            std::tm time = TimeParse::parseRFC3339(dueTime);
-
-            std::string iconColor = isCompleted ? GREEN : RED;
-            std::string icon = isCompleted ? "[✔]" : "[✗]";
-            if (!isCompleted) todoCnt++;
-
-            std::cout << iconColor << icon << RESET << " "
-                      << std::put_time(&time, "%Y-%m-%d") << " " << title
-                      << std::endl;
-        }
-        std::cout << std::endl
-                  << "There are " << todoCnt << " uncompleted tasks."
-                  << std::endl;
-
+        return items;
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
         std::cerr << r.text << std::endl;
+        std::vector<nlohmann::json> items;
+        return items;
     }
+}
+
+void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
+    std::vector<nlohmann::json> tasks =
+        getTasks(showCompleted, daysBefore, daysAfter);
+    std::cout << "Below are the " << tasks.size() << " tasks in the last "
+              << daysBefore << " days and the following " << daysAfter
+              << " days:" << std::endl;
+
+    int todoCnt = 0;
+    for (int i = 0; i < tasks.size(); i++) {
+        std::string dueTime = tasks[i]["due"];
+        std::string title = tasks[i]["title"];
+        bool isCompleted =
+            tasks[i].contains("status") && tasks[i]["status"] == "completed";
+        std::tm time = TimeParse::parseRFC3339(dueTime);
+
+        std::string iconColor = isCompleted ? GREEN : RED;
+        std::string icon = isCompleted ? "[✔]" : "[✗]";
+        if (!isCompleted) todoCnt++;
+
+        std::cout << iconColor << icon << RESET << " "
+                  << std::put_time(&time, "%Y-%m-%d") << " " << title
+                  << std::endl;
+    }
+    std::cout << std::endl
+              << "There are " << todoCnt << " uncompleted tasks." << std::endl;
 }
 
 void GoogleTasksAPI::list() { list(false, 7, 7); }
@@ -135,3 +142,143 @@ void GoogleTasksAPI::add(std::string title, std::string dueDate) {
 }
 
 void GoogleTasksAPI::add() { add("", ""); }
+
+void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
+    std::vector<nlohmann::json> tasks = getTasks(true, daysBefore, daysAfter);
+    if (tasks.empty()) {
+        std::cout << "No tasks found in the specified range." << std::endl;
+        return;
+    }
+
+    // print the task and status with id
+    for (int i = 0; i < tasks.size(); i++) {
+        std::string dueTime = tasks[i]["due"];
+        std::string title = tasks[i]["title"];
+        bool isCompleted =
+            tasks[i].contains("status") && tasks[i]["status"] == "completed";
+        std::tm time = TimeParse::parseRFC3339(dueTime);
+
+        std::string iconColor = isCompleted ? GREEN : RED;
+        std::string icon = isCompleted ? "[✔]" : "[✗]";
+
+        std::cout << std::setw(2) << i + 1 << ". " << iconColor << icon << RESET
+                  << " " << std::put_time(&time, "%Y-%m-%d") << " " << title
+                  << std::endl;
+    }
+
+    std::cout << std::endl << "Enter the number of the task you want to edit: ";
+    size_t taskIndex;
+    std::cin >> taskIndex;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
+                    '\n');  // Ignore newline character left in the input buffer
+
+    if (taskIndex < 1 || taskIndex > tasks.size()) {
+        std::cout << "Invalid task number." << std::endl;
+        return;
+    }
+
+    const auto& task = tasks[taskIndex - 1];
+
+    std::cout << std::endl
+              << "Select an action: \n"
+              << "1. Complete task\n"
+              << "2. Undo task\n"
+              << "3. Update title\n"
+              << "4. Update due date\n"
+              << "5. Delete task\n"
+              << "Enter your choice: ";
+    int action;
+    std::cin >> action;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::string taskId = task["id"].get<std::string>();
+    std::string title, dueDate;
+    try {
+        switch (action) {
+            case 1:
+                completeTask(taskId, true);
+                break;
+            case 2:
+                completeTask(taskId, false);
+                break;
+            case 3:
+                std::cout << "Enter the new title of the task: ";
+                std::getline(std::cin, title);
+
+                if (!title.empty()) {
+                    updateTask(taskId, title, task["due"]);
+                }
+                break;
+            case 4:
+                std::cout << "Enter the due date (YYYY-MM-DD): ";
+                std::getline(std::cin, dueDate);
+
+                if (!dueDate.empty()) {
+                    dueDate += "T00:00:00Z";
+                    updateTask(taskId, task["title"], dueDate);
+                }
+                break;
+            case 5:
+                deleteTask(taskId);
+                break;
+            default:
+                std::cout << "Invalid action." << std::endl;
+                return;
+        }
+        std::cout << std::endl << "Task updated successfully!" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+}
+
+void GoogleTasksAPI::completeTask(std::string& taskId, bool complete) {
+    nlohmann::json patchData;
+    patchData["status"] = complete ? "completed" : "needsAction";
+    if (complete) {
+        patchData["completed"] =
+            TimeParse::castToRFC3339(TimeParse::getCurrentDateTime());
+    }
+
+    std::string apiUrl = apiBase + "/lists/" + taskListId + "/tasks/" + taskId;
+    auto response = cpr::Patch(
+        cpr::Url{apiUrl},
+        cpr::Header{{"Authorization", "Bearer " + googleTokens.token},
+                    {"Content-Type", "application/json"}},
+        cpr::Body{patchData.dump()},
+        cpr::Timeout{10000});  // Adjust the URL and token as necessary
+
+    if (response.status_code != 200) {
+        throw std::runtime_error("Failed to update task status. HTTP Status: " +
+                                 std::to_string(response.status_code));
+    }
+}
+
+void GoogleTasksAPI::updateTask(std::string& taskId, std::string title,
+                                std::string dueDate) {
+    nlohmann::json patchData = {{"title", title}, {"due", dueDate}};
+
+    std::string apiUrl = apiBase + "/lists/" + taskListId + "/tasks/" + taskId;
+    auto response = cpr::Patch(
+        cpr::Url{apiUrl},
+        cpr::Header{{"Authorization", "Bearer " + googleTokens.token},
+                    {"Content-Type", "application/json"}},
+        cpr::Body{patchData.dump()}, cpr::Timeout{10000});
+
+    if (response.status_code != 200) {
+        throw std::runtime_error("Failed to update task. HTTP Status: " +
+                                 std::to_string(response.status_code));
+    }
+}
+
+void GoogleTasksAPI::deleteTask(std::string& taskId) {
+    std::string apiUrl = apiBase + "/lists/" + taskListId + "/tasks/" + taskId;
+    auto response = cpr::Delete(
+        cpr::Url{apiUrl},
+        cpr::Header{{"Authorization", "Bearer " + googleTokens.token}},
+        cpr::Timeout{10000});
+
+    if (response.status_code != 204) {
+        throw std::runtime_error("Failed to delete task. HTTP Status: " +
+                                 std::to_string(response.status_code));
+    }
+};

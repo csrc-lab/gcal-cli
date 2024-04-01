@@ -88,6 +88,22 @@ int main(int argc, char **argv) {
         }
     });
 
+    auto taskEdit = taskApp->add_subcommand("edit", "Edit tasks");
+    daysBefore = 3;
+    daysAfter = 3;
+    taskEdit->add_option("-a,--days-after", daysAfter,
+                         "Days after today to include in the task list");
+    taskEdit->add_option("-b,--days-before", daysBefore,
+                         "Days before today to include in the task list");
+    taskEdit->callback([&]() {
+        try {
+            GoogleTasksAPI googleTasksAPI = GoogleTasksAPI();
+            googleTasksAPI.edit(daysBefore, daysAfter);
+        } catch (const std::exception &e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+    });
+
     CLI11_PARSE(app, argc, argv);
 
     return 0;
