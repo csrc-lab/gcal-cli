@@ -62,6 +62,63 @@ void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
     }
 }
 
-void GoogleEventsAPI::add() {
-    std::cout << "Creating event" << std::endl;
+void GoogleEventsAPI::add() { insertEvent(); }
+
+void GoogleEventsAPI::insertEvent(std::string title, std::string startDateTime, std::string endDateTime) {
+    std::string calendarId = "primary"; // default calendar
+    std::string timeZone = "Asia/Taipei";
+
+    if (title.empty()) {
+        std::cout << "Enter the title of the event: ";
+        std::getline(std::cin >> std::ws, title); // ignore leading whitespace
+    }
+    if (startDateTime.empty()) {
+        std::cout << "Enter the start date and time (YYYY-MM-DD HH:MM): ";
+        std::getline(std::cin >> std::ws, startDateTime);
+        std::string date = startDateTime.substr(0, 10);
+        std::string time = startDateTime.substr(11, 5);
+        startDateTime = date + "T" + time;
+        startDateTime.append(":00");
+    }
+    if (endDateTime.empty()) {    
+        std::cout << "Enter the end date and time (YYYY-MM-DD HH:MM): ";
+        std::getline(std::cin >> std::ws, endDateTime);
+        std::string date = endDateTime.substr(0, 10);
+        std::string time = endDateTime.substr(11, 5);
+        endDateTime = date + "T" + time;
+        endDateTime.append(":00");
+    }
+
+    std::string apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events";
+    nlohmann::json j = {
+        {"summary", title},
+        {"start", {
+            {"dateTime", startDateTime},
+            {"timeZone", timeZone}
+        }},
+        {"end", {
+            {"dateTime", endDateTime},
+            {"timeZone", timeZone}
+        }}
+    };
+    
+    cpr::Response r = cpr::Post(
+        cpr::Url{apiUrl},
+        cpr::Header{
+            {"Authorization", "Bearer " + googleTokens.token},
+            {"Accept", "application/json"},
+            {"Content-Type", "application/json"}},
+        cpr::Body{j.dump()}
+    );
+    if (r.status_code == 200 || r.status_code == 201) {
+        std::cout << "Event added successfully" << std::endl;
+    } else if (r.status_code == 401) {
+        std::cerr << "Error: Unauthorized" << std::endl;
+        ConfigManager::refreshConfiguration();
+        googleTokens = TokenManager().getTokens();
+        insertEvent(title, startDateTime, endDateTime);
+    } else {
+        std::cerr << "Error: " << r.status_code << std::endl;
+        std::cerr << r.text << std::endl;
+    }
 }

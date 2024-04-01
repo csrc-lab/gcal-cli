@@ -13,5 +13,6 @@ public:
     void list() override;
     void list(int daysBefore, int daysAfter);
     void add() override;
+    void insertEvent(std::string title = "", std::string startDateTime = "", std::string endDateTime = "");
 };
 #endif
