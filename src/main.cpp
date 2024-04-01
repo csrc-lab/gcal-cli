@@ -2,6 +2,7 @@
 
 #include "ConfigManager.h"
 #include "GoogleEventsAPI.h"
+#include "GoogleTasksAPI.h"
 
 int main(int argc, char **argv) {
 #ifdef _WIN32
@@ -41,7 +42,45 @@ int main(int argc, char **argv) {
         GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
         googleEventsAPI.add();
     });
-    app.add_subcommand("task", "Manage tasks");
+
+    auto *taskApp = app.add_subcommand("task", "Manage tasks");
+    taskApp->require_subcommand(1);
+    auto taskList = taskApp->add_subcommand("ls", "List tasks");
+    bool showCompleted = true;
+    int daysBefore = 7;
+    int daysAfter = 7;
+    taskList->add_option("-a,--days-after", daysAfter,
+                         "Days after today to include in the task list");
+    taskList->add_option("-b,--days-before", daysBefore,
+                         "Days before today to include in the task list");
+    taskList->add_option<bool>(
+        "-c,--show-completed", showCompleted,
+        "Whether to show completed tasks. Default is true.");
+    taskList->callback([&]() {
+        try {
+            GoogleTasksAPI googleTasksAPI = GoogleTasksAPI();
+            googleTasksAPI.list(showCompleted, daysBefore, daysAfter);
+        } catch (const std::exception &e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+    });
+
+    auto taskAdd = taskApp->add_subcommand("add", "Create tasks");
+    std::string title = "";
+    std::string dueDate = "";
+    taskAdd->add_option("-t,--title", title, "Title of the task");
+    taskAdd->add_option(
+        "-d,--date", dueDate,
+        "Due date of the task. The format should be YYYY-MM-DD. The time "
+        "portion of the timestamp is discarded when setting the due date.");
+    taskAdd->callback([&]() {
+        try {
+            GoogleTasksAPI googleTasksAPI = GoogleTasksAPI();
+            googleTasksAPI.add(title, dueDate);
+        } catch (const std::exception &e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+    });
 
     CLI11_PARSE(app, argc, argv);
 

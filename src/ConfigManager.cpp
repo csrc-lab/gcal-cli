@@ -67,8 +67,9 @@ void ConfigManager::refreshConfiguration() {
     GoogleOauth oauth(tokens);
     try {
         GoogleTokens newTokens = oauth.refreshTokens();
-        std::cout << "Access Token: " << newTokens.token << std::endl;
-        std::cout << "Refresh Token: " << newTokens.refreshToken << std::endl;
+        // std::cout << "Access Token: " << newTokens.token << std::endl;
+        // std::cout << "Refresh Token: " << newTokens.refreshToken <<
+        // std::endl;
 
         tokenManager.saveTokens(newTokens);
 

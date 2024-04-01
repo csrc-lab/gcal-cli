@@ -9,11 +9,11 @@ std::string getHomeDirectory() {
     std::string homeDir;
 #ifdef _WIN32
     // Windows
-    char* userProfile = getenv("USERPROFILE");
+    char *userProfile = getenv("USERPROFILE");
     if (userProfile) homeDir = userProfile;
 #else
     // Unix/Linux/macOS
-    char* home = getenv("HOME");
+    char *home = getenv("HOME");
     if (home) homeDir = home;
 #endif
     return homeDir;
@@ -23,10 +23,10 @@ TokenManager::TokenManager() {
     tokenFileName = getHomeDirectory() + "/.gcal_cli_tokens";
 }
 
-void TokenManager::saveTokens(const std::string& clientId,
-                              const std::string& clientSecret,
-                              const std::string& token,
-                              const std::string& refreshToken) {
+void TokenManager::saveTokens(const std::string &clientId,
+                              const std::string &clientSecret,
+                              const std::string &token,
+                              const std::string &refreshToken) {
     std::ofstream tokenFile(tokenFileName, std::ios::binary);
 
     tokenFile << clientId << std::endl;
@@ -34,6 +34,11 @@ void TokenManager::saveTokens(const std::string& clientId,
     tokenFile << token << std::endl;
     tokenFile << refreshToken << std::endl;
     tokenFile.close();
+
+    this->clientId = clientId;
+    this->clientSecret = clientSecret;
+    this->token = token;
+    this->refreshToken = refreshToken;
 }
 
 void TokenManager::saveTokens(GoogleTokens tokens) {
@@ -50,7 +55,13 @@ void TokenManager::readTokens() {
 GoogleTokens TokenManager::getTokens() {
     if (token.empty()) {
         readTokens();
+        if (token.empty()) {
+            throw std::runtime_error(
+                "Token is not found. Please set the configuration by running "
+                "'gcal-cli config set'.");
+        }
     }
+
     return {clientId, clientSecret, token, refreshToken};
 }
 
