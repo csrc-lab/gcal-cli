@@ -12,16 +12,22 @@ GoogleEventsAPI::GoogleEventsAPI() {
     googleTokens = tokenManager.getTokens();
 }
 
-void GoogleEventsAPI::list() {
+void GoogleEventsAPI::list() { list(7, 7); }
+void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
+    std::string rfcStartDay =
+        TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-daysBefore));
+    std::string rfcEndDay =
+        TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(daysAfter));
+
     std::string calendarId = "primary";
     std::string apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId + "/events";
-    std::string rfcLast30day = TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-30));
 
     cpr::Response r = cpr::Get(
         cpr::Url{apiUrl},
         cpr::Header{{"Authorization", "Bearer " + googleTokens.token}, {"Accept", "application/json"}},
         cpr::Parameters{
-            {"timeMin", rfcLast30day},
+            {"timeMin", rfcStartDay},
+            {"timeMax", rfcEndDay},
             {"orderBy", "startTime"},
             {"singleEvents", "true"}
         });
@@ -33,8 +39,11 @@ void GoogleEventsAPI::list() {
         std::copy_if(rawItems.begin(), rawItems.end(), std::back_inserter(items), [](nlohmann::json item) {
             return item["status"] == "confirmed";
         });
-        std::cout << "Below are the "<< items.size() << " events in the last 30 days:" << std::endl;
-        
+
+        std::cout << "Below are the " << items.size() << " tasks in the last "
+                  << daysBefore << " days and the following " << daysAfter
+                  << " days:" << std::endl;
+
         for (int i = 1; i <= items.size(); i++) {
             std::string startRFC = items[i-1]["start"]["dateTime"];
             std::string endRFC = items[i-1]["end"]["dateTime"];

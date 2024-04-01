@@ -9,6 +9,10 @@ int main(int argc, char **argv) {
     system("chcp 65001");  // Set the console to UTF-8 mode
 #endif
 
+    bool showCompleted = true;
+    int daysBefore = 7;
+    int daysAfter = 7;
+    
     CLI::App app{"Google Calendar CLI"};
     argv = app.ensure_utf8(argv);
 
@@ -32,10 +36,15 @@ int main(int argc, char **argv) {
 
     auto *eventApp = app.add_subcommand("event", "Manage events");
     eventApp->require_subcommand(1);
-    auto eventList = eventApp->add_subcommand("list", "List events");
-    eventList->callback([]() {
+    auto eventList = eventApp->add_subcommand("ls", "List events");
+    eventList->add_option("-a,--days-after", daysAfter,
+                          "Days after today to include in the event list");
+    eventList->add_option("-b,--days-before", daysBefore,
+                          "Days before today to include in the event list");
+
+    eventList->callback([&]() {
         GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
-        googleEventsAPI.list();
+        googleEventsAPI.list(daysBefore, daysAfter);
     });
     auto eventAdd = eventApp->add_subcommand("add", "Add an event");
     eventAdd->callback([]() {
@@ -46,9 +55,6 @@ int main(int argc, char **argv) {
     auto *taskApp = app.add_subcommand("task", "Manage tasks");
     taskApp->require_subcommand(1);
     auto taskList = taskApp->add_subcommand("ls", "List tasks");
-    bool showCompleted = true;
-    int daysBefore = 7;
-    int daysAfter = 7;
     taskList->add_option("-a,--days-after", daysAfter,
                          "Days after today to include in the task list");
     taskList->add_option("-b,--days-before", daysBefore,

@@ -11,6 +11,7 @@ private:
 public:
     GoogleEventsAPI();
     void list() override;
+    void list(int daysBefore, int daysAfter);
     void add() override;
 };
 #endif
