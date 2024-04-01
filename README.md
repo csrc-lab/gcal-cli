@@ -43,6 +43,7 @@ task
     add
         -t,--title TEXT             Title of the task
         -d,--date TEXT              Due date of the task. The format should be YYYY-MM-DD.
-    rm
     edit
+        -a,--days-after INT         Days after today to include in the task list
+        -b,--days-before INT        Days before today to include in the task list
 ```
