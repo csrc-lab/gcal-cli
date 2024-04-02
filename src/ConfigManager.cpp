@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "GoogleOauth.h"
-#include "TokenManager.h"
+#include "ProfileManager.h"
 
 bool fileExists(const std::string& name) {
     std::ifstream f(name.c_str());
@@ -14,12 +14,29 @@ bool fileExists(const std::string& name) {
 void ConfigManager::showConfiguration() {
     // Implement the logic to show configuration
     std::cout << "Show the current configuration" << std::endl;
-    TokenManager tokenManager;
-    std::string token = tokenManager.getToken();
-    std::string refreshToken = tokenManager.getRefreshToken();
-
+    ProfileManager profileManager;
+    std::string token = profileManager.getToken();
     std::cout << "Access Token: " << token << std::endl;
+
+    std::string refreshToken = profileManager.getRefreshToken();
     std::cout << "Refresh Token: " << refreshToken << std::endl;
+
+    std::vector<std::pair<std::string, std::string>> calendarList =
+        profileManager.getCalendarList();
+    for (auto calendar : calendarList) {
+        std::cout << "Calendar ID: " << calendar.first
+                  << ", Calendar Name: " << calendar.second << std::endl;
+    }
+
+    std::vector<std::pair<std::string, std::string>> taskList =
+        profileManager.getTaskList();
+    for (auto task : taskList) {
+        std::cout << "Task ID: " << task.first << ", Task Name: " << task.second
+                  << std::endl;
+    }
+
+    std::string timezone = profileManager.getTimezone();
+    std::cout << "Timezone: " << timezone << std::endl;
 }
 
 void ConfigManager::setConfiguration(const std::string& credPath) {
@@ -51,8 +68,16 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         std::cout << "Access Token: " << tokens.token << std::endl;
         std::cout << "Refresh Token: " << tokens.refreshToken << std::endl;
 
-        TokenManager tokenManager;
-        tokenManager.saveTokens(tokens);
+        ProfileManager profileManager;
+        profileManager.setTokens(tokens);
+        std::vector<std::pair<std::string, std::string>> calendarList;
+        profileManager.setCalendarList(calendarList);
+        std::vector<std::pair<std::string, std::string>> taskList;
+        profileManager.setTaskList(taskList);
+        std::string timezone = "Asia/Taipei";
+        profileManager.setTimezone(timezone);
+
+        profileManager.saveProfile();
 
         std::cout << "Configuration set successfully" << std::endl;
     } catch (const std::exception& e) {
@@ -62,16 +87,14 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
 }
 
 void ConfigManager::refreshConfiguration() {
-    TokenManager tokenManager;
-    GoogleTokens tokens = tokenManager.getTokens();
+    ProfileManager profileManager;
+    GoogleTokens tokens = profileManager.getTokens();
     GoogleOauth oauth(tokens);
     try {
         GoogleTokens newTokens = oauth.refreshTokens();
-        // std::cout << "Access Token: " << newTokens.token << std::endl;
-        // std::cout << "Refresh Token: " << newTokens.refreshToken <<
-        // std::endl;
 
-        tokenManager.saveTokens(newTokens);
+        profileManager.setTokens(newTokens);
+        profileManager.saveProfile();
 
         std::cout << "Configuration refreshed successfully" << std::endl;
     } catch (const std::exception& e) {

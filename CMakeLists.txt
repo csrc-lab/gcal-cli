@@ -13,7 +13,7 @@ set(DEFAULT_BUILD_TYPE "Debug")
 include_directories(include)
 
 # Add the executable
-add_executable(gcal-cli src/main.cpp src/GoogleOauth.cpp src/ConfigManager.cpp src/TokenManager.cpp src/GoogleEventsAPI.cpp src/utils/TimeParse.cpp src/GoogleTasksAPI.cpp)
+add_executable(gcal-cli src/main.cpp src/GoogleOauth.cpp src/ConfigManager.cpp src/ProfileManager.cpp src/GoogleEventsAPI.cpp src/utils/TimeParse.cpp src/GoogleTasksAPI.cpp)
 
 if(WIN32) # Install dlls in the same directory as the executable on Windows
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

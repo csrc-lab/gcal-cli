@@ -1,18 +1,21 @@
 #ifndef GOOGLE_EVENTS_API_H
 #define GOOGLE_EVENTS_API_H
 
-#include "APIBase.h"
-#include "TokenManager.h"
 #include <string>
 
+#include "APIBase.h"
+#include "ProfileManager.h"
+
 class GoogleEventsAPI : public ApiBase {
-private:
+   private:
     GoogleTokens googleTokens;
-public:
+
+   public:
     GoogleEventsAPI();
     void list() override;
     void list(int daysBefore, int daysAfter);
     void add() override;
-    void insertEvent(std::string title = "", std::string startDateTime = "", std::string endDateTime = "");
+    void insertEvent(std::string title = "", std::string startDateTime = "",
+                     std::string endDateTime = "");
 };
 #endif

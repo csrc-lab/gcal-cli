@@ -14,12 +14,12 @@ const std::string GREEN = "\033[32m";
 const std::string RESET = "\033[0m";
 
 GoogleTasksAPI::GoogleTasksAPI() {
-    auto tokenManager = TokenManager();
-    googleTokens = tokenManager.getTokensFromFile();
+    ProfileManager profileManager;
+    googleTokens = profileManager.getTokensFromFile();
 
     if (!tryFetchTaskList()) {
         ConfigManager::refreshConfiguration();
-        googleTokens = tokenManager.getTokensFromFile();
+        googleTokens = profileManager.getTokensFromFile();
         if (!tryFetchTaskList()) {
             throw std::runtime_error(
                 "Failed to fetch task list after refreshing token.");

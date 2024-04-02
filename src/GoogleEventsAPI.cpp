@@ -10,8 +10,8 @@
 #include "utils/TimeParse.h"
 
 GoogleEventsAPI::GoogleEventsAPI() {
-    auto tokenManager = TokenManager();
-    googleTokens = tokenManager.getTokens();
+    ProfileManager profileManager;
+    googleTokens = profileManager.getTokens();
 }
 
 void GoogleEventsAPI::list() { list(7, 7); }
@@ -59,7 +59,7 @@ void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
     } else if (r.status_code == 401) {
         std::cerr << "Error: Unauthorized" << std::endl;
         ConfigManager::refreshConfiguration();
-        googleTokens = TokenManager().getTokens();
+        googleTokens = ProfileManager().getTokens();
         list();
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
@@ -113,7 +113,7 @@ void GoogleEventsAPI::insertEvent(std::string title, std::string startDateTime,
     } else if (r.status_code == 401) {
         std::cerr << "Error: Unauthorized" << std::endl;
         ConfigManager::refreshConfiguration();
-        googleTokens = TokenManager().getTokens();
+        googleTokens = ProfileManager().getTokens();
         insertEvent(title, startDateTime, endDateTime);
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
