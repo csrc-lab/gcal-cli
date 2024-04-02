@@ -43,9 +43,6 @@ bool GoogleTasksAPI::tryFetchTaskList() {
             taskListId = item["id"].get<std::string>();
             return true;
         }
-    } else {
-        std::cerr << "Error: " << r.status_code << std::endl;
-        std::cerr << r.text << std::endl;
     }
     return false;
 }
@@ -171,7 +168,7 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
         std::tm time = TimeParse::parseRFC3339(dueTime);
 
         std::string iconColor = isCompleted ? GREEN : RED;
-        std::string icon = isCompleted ? "[✔]" : "[✗]";
+        std::string icon = isCompleted ? "[V]" : "[X]";
 
         std::cout << std::setw(2) << i + 1 << ". " << iconColor << icon << RESET
                   << " " << std::put_time(&time, "%Y-%m-%d") << " " << title
@@ -181,6 +178,7 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
     std::cout << std::endl << "Enter the number of the task you want to edit: ";
     int taskIndex;
     std::cin >> taskIndex;
+    std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
 
     if (taskIndex < 1 || taskIndex > tasks.size()) {
         std::cout << "Invalid task number." << std::endl;
@@ -199,6 +197,7 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
               << "Enter your choice: ";
     int action;
     std::cin >> action;
+    std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
 
     std::string taskId = task["id"].get<std::string>();
     std::string title, dueDate;
