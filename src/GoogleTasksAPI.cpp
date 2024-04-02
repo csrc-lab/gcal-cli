@@ -53,7 +53,7 @@ std::vector<nlohmann::json> GoogleTasksAPI::getTasks(bool showCompleted,
     std::string rfcStartDay =
         TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-daysBefore));
     std::string rfcEndDay =
-        TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(daysAfter));
+        TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(daysAfter + 1));
 
     std::string apiUrl = apiBase + "/lists/" + taskListId + "/tasks";
 
