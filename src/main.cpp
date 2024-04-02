@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     bool showCompleted = true;
     int daysBefore = 7;
     int daysAfter = 7;
-    
+
     CLI::App app{"Google Calendar CLI"};
     argv = app.ensure_utf8(argv);
 
@@ -89,16 +89,16 @@ int main(int argc, char **argv) {
     });
 
     auto taskEdit = taskApp->add_subcommand("edit", "Edit tasks");
-    daysBefore = 3;
-    daysAfter = 3;
-    taskEdit->add_option("-a,--days-after", daysAfter,
+    int daysBeforeTaskEdit = 3;
+    int daysAfterTaskEdit = 3;
+    taskEdit->add_option("-a,--days-after", daysAfterTaskEdit,
                          "Days after today to include in the task list");
-    taskEdit->add_option("-b,--days-before", daysBefore,
+    taskEdit->add_option("-b,--days-before", daysBeforeTaskEdit,
                          "Days before today to include in the task list");
     taskEdit->callback([&]() {
         try {
             GoogleTasksAPI googleTasksAPI = GoogleTasksAPI();
-            googleTasksAPI.edit(daysBefore, daysAfter);
+            googleTasksAPI.edit(daysBeforeTaskEdit, daysAfterTaskEdit);
         } catch (const std::exception &e) {
             std::cerr << "Error: " << e.what() << std::endl;
         }

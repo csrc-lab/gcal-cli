@@ -28,6 +28,7 @@ class TokenManager {
                     const std::string &refreshToken);
     void saveTokens(GoogleTokens tokens);
     GoogleTokens getTokens();
+    GoogleTokens getTokensFromFile();
     std::string getToken();
     std::string getRefreshToken();
     std::string getClientId();

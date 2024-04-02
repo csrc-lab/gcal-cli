@@ -65,6 +65,12 @@ GoogleTokens TokenManager::getTokens() {
     return {clientId, clientSecret, token, refreshToken};
 }
 
+GoogleTokens TokenManager::getTokensFromFile() {
+    readTokens();
+
+    return {clientId, clientSecret, token, refreshToken};
+}
+
 std::string TokenManager::getToken() {
     if (token.empty()) {
         readTokens();

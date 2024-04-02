@@ -13,6 +13,8 @@ class GoogleTasksAPI : public ApiBase {
     std::string taskListId;
     std::string apiBase = "https://tasks.googleapis.com/tasks/v1";
 
+    bool tryFetchTaskList();
+
     std::vector<nlohmann::json> getTasks(bool showCompleted, int daysBefore,
                                          int daysAfter);
     void completeTask(std::string& taskId, bool complete);

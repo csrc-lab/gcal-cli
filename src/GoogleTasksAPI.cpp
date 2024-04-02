@@ -15,8 +15,19 @@ const std::string RESET = "\033[0m";
 
 GoogleTasksAPI::GoogleTasksAPI() {
     auto tokenManager = TokenManager();
-    googleTokens = tokenManager.getTokens();
+    googleTokens = tokenManager.getTokensFromFile();
 
+    if (!tryFetchTaskList()) {
+        ConfigManager::refreshConfiguration();
+        googleTokens = tokenManager.getTokensFromFile();
+        if (!tryFetchTaskList()) {
+            throw std::runtime_error(
+                "Failed to fetch task list after refreshing token.");
+        }
+    }
+}
+
+bool GoogleTasksAPI::tryFetchTaskList() {
     std::string apiUrl = apiBase + "/users/@me/lists";
     cpr::Response r =
         cpr::Get(cpr::Url{apiUrl},
@@ -27,15 +38,16 @@ GoogleTasksAPI::GoogleTasksAPI() {
         nlohmann::json j = nlohmann::json::parse(r.text);
         std::vector<nlohmann::json> items =
             j["items"].get<std::vector<nlohmann::json>>();
-        nlohmann::json item = items.at(0);
-        taskListId = item["id"].get<std::string>();
-    } else if (r.status_code == 401) {
-        ConfigManager::refreshConfiguration();
-        GoogleTasksAPI();
+        if (!items.empty()) {
+            nlohmann::json item = items.at(0);
+            taskListId = item["id"].get<std::string>();
+            return true;
+        }
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
         std::cerr << r.text << std::endl;
     }
+    return false;
 }
 
 std::vector<nlohmann::json> GoogleTasksAPI::getTasks(bool showCompleted,
@@ -93,7 +105,7 @@ void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
         std::tm time = TimeParse::parseRFC3339(dueTime);
 
         std::string iconColor = isCompleted ? GREEN : RED;
-        std::string icon = isCompleted ? "[✔]" : "[✗]";
+        std::string icon = isCompleted ? "[V]" : "[X]";
         if (!isCompleted) todoCnt++;
 
         std::cout << iconColor << icon << RESET << " "
@@ -167,10 +179,8 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
     }
 
     std::cout << std::endl << "Enter the number of the task you want to edit: ";
-    size_t taskIndex;
+    int taskIndex;
     std::cin >> taskIndex;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(),
-                    '\n');  // Ignore newline character left in the input buffer
 
     if (taskIndex < 1 || taskIndex > tasks.size()) {
         std::cout << "Invalid task number." << std::endl;
@@ -189,7 +199,6 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
               << "Enter your choice: ";
     int action;
     std::cin >> action;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     std::string taskId = task["id"].get<std::string>();
     std::string title, dueDate;
