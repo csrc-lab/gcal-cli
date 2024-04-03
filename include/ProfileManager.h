@@ -37,7 +37,6 @@ class ProfileManager {
     void setTimezone(const std::string& timezone);
 
     GoogleTokens getTokens();
-    GoogleTokens getTokensFromFile();
     std::string getToken();
     std::string getRefreshToken();
     std::string getClientId();

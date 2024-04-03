@@ -12,9 +12,6 @@
 #include "ProfileManager.h"
 
 GoogleOauth::GoogleOauth(const std::string &credPath) {
-    // Implement the logic to read the credential from the file
-    std::cout << "Read the credential from the file: " << credPath << std::endl;
-
     // read credential from  json file
     nlohmann::json j;
     std::ifstream i(credPath);
@@ -59,8 +56,6 @@ std::string GoogleOauth::getAuthorizationUrl() {
 }
 
 GoogleTokens GoogleOauth::getAccessToken(const std::string &code) {
-    std::cout << "Get the access token using the code: " << code << std::endl;
-
     const std::string tokenEndpoint = "https://oauth2.googleapis.com/token";
 
     cpr::Response r =
@@ -91,9 +86,6 @@ std::string GoogleOauth::getClientId() { return this->clientId; }
 std::string GoogleOauth::getClientSecret() { return this->clientSecret; }
 
 GoogleTokens GoogleOauth::refreshTokens() {
-    std::cout << "Refreshing the access token using the refresh token."
-              << std::endl;
-
     if (this->refreshToken.empty()) {
         std::cerr << "Error: Refresh token is empty" << std::endl;
         throw std::runtime_error("Refresh token is empty");

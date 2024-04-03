@@ -16,37 +16,37 @@ bool fileExists(const std::string& name) {
 }
 
 void ConfigManager::showConfiguration() {
-    // Implement the logic to show configuration
-    std::cout << "Show the current configuration" << std::endl;
     ProfileManager profileManager;
     std::string token = profileManager.getToken();
-    std::cout << "Access Token: " << token << std::endl;
+    std::cout << "\033[1mAccess Token:\033[0m " << token << std::endl;
 
     std::string refreshToken = profileManager.getRefreshToken();
-    std::cout << "Refresh Token: " << refreshToken << std::endl;
+    std::cout << "\033[1mRefresh Token:\033[0m " << refreshToken << std::endl;
+
+    std::string timezone = profileManager.getTimezone();
+    std::cout << "\033[1mTimezone:\033[0m " << timezone << std::endl;
 
     std::vector<std::pair<std::string, std::string>> calendarList =
         profileManager.getCalendarList();
-    for (auto calendar : calendarList) {
-        std::cout << "Calendar ID: " << calendar.first
-                  << ", Calendar Name: " << calendar.second << std::endl;
+    std::cout << "\033[1mCalendar List:\033[0m" << std::endl;
+    for (int i = 0; i < calendarList.size(); i++) {
+        std::cout << std::setw(2) << i + 1 << ". " << calendarList[i].second
+                  << std::endl;
     }
 
     std::vector<std::pair<std::string, std::string>> taskList =
         profileManager.getTaskList();
-    for (auto task : taskList) {
-        std::cout << "Task ID: " << task.first << ", Task Name: " << task.second
+    std::cout << "\033[1mTask List:\033[0m" << std::endl;
+    for (int i = 0; i < taskList.size(); i++) {
+        std::cout << std::setw(2) << i + 1 << ". " << taskList[i].second
                   << std::endl;
     }
-
-    std::string timezone = profileManager.getTimezone();
-    std::cout << "Timezone: " << timezone << std::endl;
 }
 
 void ConfigManager::setConfiguration(const std::string& credPath) {
+    auto inquirer = alx::Inquirer("config");
     std::string localCredPath = credPath;
     if (localCredPath.empty()) {
-        auto inquirer = alx::Inquirer("credential_path");
         localCredPath =
             inquirer
                 .add_question(
@@ -65,10 +65,10 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
     std::cout << "\033[1;31mPlease copy the following URL and paste it into "
                  "your browser "
                  "to proceed with Google login:\033[0m\n"
-              << authorization_url << std::endl;
+              << authorization_url << std::endl
+              << std::endl;
 
     std::string code;
-    auto inquirer = alx::Inquirer("login_code");
     code = inquirer.add_question({"input", "Enter the code from the browser"})
                .ask();
 
@@ -81,10 +81,10 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         std::vector<std::pair<std::string, std::string>> tempCalendarList =
             calendarAPI.fetchCalendarList();
         std::vector<std::pair<std::string, std::string>> calendarList;
-        inquirer = alx::Inquirer("calendar_list");
         for (auto calendar : tempCalendarList) {
             std::string question;
-            question = "Do you want to add calendar " + calendar.second + "?";
+            question =
+                "Do you want to add calendar \"" + calendar.second + "\"?";
             std::string ans =
                 inquirer.add_question({"confirm", question, alx::Type::yesNo})
                     .ask();
@@ -94,15 +94,13 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         }
         profileManager.setCalendarList(calendarList);
 
-        std::cout << "Fetching the task list...\n";
         GoogleTasksAPI tasksAPI(tokens);
         std::vector<std::pair<std::string, std::string>> tempTaskList =
             tasksAPI.fetchTaskList();
         std::vector<std::pair<std::string, std::string>> taskList;
-        inquirer = alx::Inquirer("task_list");
         for (auto task : tempTaskList) {
             std::string question;
-            question = "Do you want to add task " + task.second + "?";
+            question = "Do you want to add task \"" + task.second + "\"?";
             std::string ans =
                 inquirer.add_question({"confirm", question, alx::Type::yesNo})
                     .ask();
@@ -112,8 +110,6 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         }
         profileManager.setTaskList(taskList);
 
-        inquirer = alx::Inquirer("timezone");
-        // std::string timezone = "Asia/Taipei";
         std::string timezone =
             inquirer
                 .add_question(
@@ -126,7 +122,7 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
 
         profileManager.saveProfile();
 
-        std::cout << "Congratulations! Configuration set successfully"
+        std::cout << "Congratulations! Configuration set successfully!"
                   << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;

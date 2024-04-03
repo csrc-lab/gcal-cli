@@ -87,8 +87,6 @@ GoogleTokens ProfileManager::getTokens() {
     return {data.clientId, data.clientSecret, data.token, data.refreshToken};
 }
 
-GoogleTokens ProfileManager::getTokensFromFile() { return getTokens(); }
-
 std::string ProfileManager::getToken() { return data.token; }
 
 std::string ProfileManager::getRefreshToken() { return data.refreshToken; }
