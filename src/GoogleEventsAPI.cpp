@@ -7,11 +7,44 @@
 #include <vector>
 
 #include "ConfigManager.h"
+#include "ProfileManager.h"
 #include "utils/TimeParse.h"
 
 GoogleEventsAPI::GoogleEventsAPI() {
     ProfileManager profileManager;
     googleTokens = profileManager.getTokens();
+    calendarList = profileManager.getCalendarList();
+}
+
+std::vector<std::pair<std::string, std::string>>
+GoogleEventsAPI::fetchCalendarList() {
+    std::string apiUrl =
+        "https://www.googleapis.com/calendar/v3/users/me/calendarList";
+    cpr::Response r =
+        cpr::Get(cpr::Url{apiUrl},
+                 cpr::Header{{"Authorization", "Bearer " + googleTokens.token},
+                             {"Accept", "application/json"}});
+    if (r.status_code == 200) {
+        nlohmann::json j = nlohmann::json::parse(r.text);
+        std::vector<nlohmann::json> items =
+            j["items"].get<std::vector<nlohmann::json>>();
+        std::vector<std::pair<std::string, std::string>> calendarList;
+        for (nlohmann::json item : items) {
+            std::string id = item["id"];
+            std::string summary = item["summary"];
+            calendarList.push_back(std::make_pair(id, summary));
+        }
+        return calendarList;
+    } else if (r.status_code == 401) {
+        std::cerr << "Error: Unauthorized" << std::endl;
+        ConfigManager::refreshConfiguration();
+        googleTokens = ProfileManager().getTokens();
+        return fetchCalendarList();
+    } else {
+        std::cerr << "Error: " << r.status_code << std::endl;
+        std::cerr << r.text << std::endl;
+        return {};
+    }
 }
 
 void GoogleEventsAPI::list() { list(7, 7); }

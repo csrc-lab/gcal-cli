@@ -4,12 +4,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
-struct GoogleTokens {
-    std::string clientId;
-    std::string clientSecret;
-    std::string token;
-    std::string refreshToken;
-};
+#include "GoogleTokens.h"
 
 class ProfileManager {
    private:

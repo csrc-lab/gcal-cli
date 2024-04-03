@@ -3,7 +3,10 @@
 #include <fstream>
 #include <iostream>
 
+#include "GoogleEventsAPI.h"
 #include "GoogleOauth.h"
+#include "GoogleTasksAPI.h"
+#include "GoogleTokens.h"
 #include "ProfileManager.h"
 
 bool fileExists(const std::string& name) {
@@ -70,10 +73,20 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
 
         ProfileManager profileManager;
         profileManager.setTokens(tokens);
-        std::vector<std::pair<std::string, std::string>> calendarList;
+
+        std::cout << "Fetching the calendar list...\n";
+        GoogleEventsAPI calendarAPI(tokens);
+        std::vector<std::pair<std::string, std::string>> calendarList =
+            calendarAPI.fetchCalendarList();
         profileManager.setCalendarList(calendarList);
-        std::vector<std::pair<std::string, std::string>> taskList;
+
+        std::cout << "Fetching the task list...\n";
+        GoogleTasksAPI tasksAPI(tokens);
+        std::vector<std::pair<std::string, std::string>> taskList =
+            tasksAPI.fetchTaskList();
         profileManager.setTaskList(taskList);
+
+        std::cout << "Setting the timezone to Asia/Taipei\n";
         std::string timezone = "Asia/Taipei";
         profileManager.setTimezone(timezone);
 

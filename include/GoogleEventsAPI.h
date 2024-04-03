@@ -2,16 +2,21 @@
 #define GOOGLE_EVENTS_API_H
 
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "APIBase.h"
-#include "ProfileManager.h"
+#include "GoogleTokens.h"
 
 class GoogleEventsAPI : public ApiBase {
    private:
     GoogleTokens googleTokens;
+    std::vector<std::pair<std::string, std::string>> calendarList;
 
    public:
     GoogleEventsAPI();
+    GoogleEventsAPI(GoogleTokens googleTokens) : googleTokens(googleTokens){};
+    std::vector<std::pair<std::string, std::string>> fetchCalendarList();
     void list() override;
     void list(int daysBefore, int daysAfter);
     void add() override;

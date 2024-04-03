@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "ConfigManager.h"
+#include "ProfileManager.h"
 #include "utils/TimeParse.h"
 
 const std::string RED = "\033[31m";
@@ -15,36 +16,38 @@ const std::string RESET = "\033[0m";
 
 GoogleTasksAPI::GoogleTasksAPI() {
     ProfileManager profileManager;
-    googleTokens = profileManager.getTokensFromFile();
-
-    if (!tryFetchTaskList()) {
-        ConfigManager::refreshConfiguration();
-        googleTokens = profileManager.getTokensFromFile();
-        if (!tryFetchTaskList()) {
-            throw std::runtime_error(
-                "Failed to fetch task list after refreshing token.");
-        }
+    googleTokens = profileManager.getTokens();
+    taskList = profileManager.getTaskList();
+    if (!taskList.empty()) {
+        taskListId = taskList.at(0).first;
     }
 }
 
-bool GoogleTasksAPI::tryFetchTaskList() {
+std::vector<std::pair<std::string, std::string>>
+GoogleTasksAPI::fetchTaskList() {
     std::string apiUrl = apiBase + "/users/@me/lists";
     cpr::Response r =
         cpr::Get(cpr::Url{apiUrl},
                  cpr::Header{{"Authorization", "Bearer " + googleTokens.token},
                              {"Accept", "application/json"}},
                  cpr::Parameters{{"maxResults", "1"}});
+
+    std::vector<std::pair<std::string, std::string>> list;
     if (r.status_code == 200) {
         nlohmann::json j = nlohmann::json::parse(r.text);
         std::vector<nlohmann::json> items =
             j["items"].get<std::vector<nlohmann::json>>();
-        if (!items.empty()) {
-            nlohmann::json item = items.at(0);
-            taskListId = item["id"].get<std::string>();
-            return true;
+        for (const auto& item : items) {
+            list.push_back({item["id"].get<std::string>(),
+                            item["title"].get<std::string>()});
         }
+        taskList = list;
+        taskListId = list.at(0).first;
+    } else {
+        throw std::runtime_error("Failed to fetch task list. HTTP Status: " +
+                                 std::to_string(r.status_code));
     }
-    return false;
+    return list;
 }
 
 std::vector<nlohmann::json> GoogleTasksAPI::getTasks(bool showCompleted,
@@ -79,16 +82,20 @@ std::vector<nlohmann::json> GoogleTasksAPI::getTasks(bool showCompleted,
                   });
         return items;
     } else {
-        std::cerr << "Error: " << r.status_code << std::endl;
-        std::cerr << r.text << std::endl;
-        std::vector<nlohmann::json> items;
-        return items;
+        throw std::runtime_error("Failed to fetch tasks. HTTP Status: " +
+                                 std::to_string(r.status_code));
     }
 }
 
 void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
-    std::vector<nlohmann::json> tasks =
-        getTasks(showCompleted, daysBefore, daysAfter);
+    std::vector<nlohmann::json> tasks;
+    try {
+        tasks = getTasks(showCompleted, daysBefore, daysAfter);
+    } catch (const std::exception& e) {
+        ConfigManager::refreshConfiguration();
+        googleTokens = ProfileManager().getTokens();
+        tasks = getTasks(showCompleted, daysBefore, daysAfter);
+    }
     std::cout << "Below are the " << tasks.size() << " tasks in the last "
               << daysBefore << " days and the following " << daysAfter
               << " days:" << std::endl;
@@ -153,7 +160,14 @@ void GoogleTasksAPI::add(std::string title, std::string dueDate) {
 void GoogleTasksAPI::add() { add("", ""); }
 
 void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
-    std::vector<nlohmann::json> tasks = getTasks(true, daysBefore, daysAfter);
+    std::vector<nlohmann::json> tasks;
+    try {
+        tasks = getTasks(true, daysBefore, daysAfter);
+    } catch (const std::exception& e) {
+        ConfigManager::refreshConfiguration();
+        googleTokens = ProfileManager().getTokens();
+        tasks = getTasks(true, daysBefore, daysAfter);
+    }
     if (tasks.empty()) {
         std::cout << "No tasks found in the specified range." << std::endl;
         return;

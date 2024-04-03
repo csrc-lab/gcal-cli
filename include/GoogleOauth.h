@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "ProfileManager.h"
+#include "GoogleTokens.h"
 
 class GoogleOauth {
    private:

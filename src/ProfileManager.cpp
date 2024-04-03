@@ -6,6 +6,8 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+#include "GoogleTokens.h"
+
 using json = nlohmann::json;
 
 std::string getHomeDirectory() {

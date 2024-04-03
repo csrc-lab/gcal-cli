@@ -8,6 +8,7 @@
 #include <sstream>
 #include <vector>
 
+#include "GoogleTokens.h"
 #include "ProfileManager.h"
 
 GoogleOauth::GoogleOauth(const std::string &credPath) {
