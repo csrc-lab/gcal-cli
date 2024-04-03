@@ -8,6 +8,7 @@
 #include "GoogleTasksAPI.h"
 #include "GoogleTokens.h"
 #include "ProfileManager.h"
+#include "utils/inquirer.h"
 
 bool fileExists(const std::string& name) {
     std::ifstream f(name.c_str());
@@ -45,7 +46,12 @@ void ConfigManager::showConfiguration() {
 void ConfigManager::setConfiguration(const std::string& credPath) {
     std::string localCredPath = credPath;
     if (localCredPath.empty()) {
-        localCredPath = "credential.json";
+        auto inquirer = alx::Inquirer("credential_path");
+        localCredPath =
+            inquirer
+                .add_question(
+                    {"input", "Enter the path to the Google credential file"})
+                .ask();
     }
 
     if (!fileExists(localCredPath)) {
@@ -53,7 +59,6 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         return;
     }
     GoogleOauth oauth(localCredPath);
-    oauth.showCredential();
 
     std::string authorization_url = oauth.getAuthorizationUrl();
 
@@ -63,36 +68,66 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
               << authorization_url << std::endl;
 
     std::string code;
-    std::cout << "\033[1;31mEnter the code: \033[0m";
-    std::cin >> code;
+    auto inquirer = alx::Inquirer("login_code");
+    code = inquirer.add_question({"input", "Enter the code from the browser"})
+               .ask();
 
     try {
         GoogleTokens tokens = oauth.getAccessToken(code);
-        std::cout << "Access Token: " << tokens.token << std::endl;
-        std::cout << "Refresh Token: " << tokens.refreshToken << std::endl;
-
         ProfileManager profileManager;
         profileManager.setTokens(tokens);
 
-        std::cout << "Fetching the calendar list...\n";
         GoogleEventsAPI calendarAPI(tokens);
-        std::vector<std::pair<std::string, std::string>> calendarList =
+        std::vector<std::pair<std::string, std::string>> tempCalendarList =
             calendarAPI.fetchCalendarList();
+        std::vector<std::pair<std::string, std::string>> calendarList;
+        inquirer = alx::Inquirer("calendar_list");
+        for (auto calendar : tempCalendarList) {
+            std::string question;
+            question = "Do you want to add calendar " + calendar.second + "?";
+            std::string ans =
+                inquirer.add_question({"confirm", question, alx::Type::yesNo})
+                    .ask();
+            if (ans == "yes") {
+                calendarList.push_back(calendar);
+            }
+        }
         profileManager.setCalendarList(calendarList);
 
         std::cout << "Fetching the task list...\n";
         GoogleTasksAPI tasksAPI(tokens);
-        std::vector<std::pair<std::string, std::string>> taskList =
+        std::vector<std::pair<std::string, std::string>> tempTaskList =
             tasksAPI.fetchTaskList();
+        std::vector<std::pair<std::string, std::string>> taskList;
+        inquirer = alx::Inquirer("task_list");
+        for (auto task : tempTaskList) {
+            std::string question;
+            question = "Do you want to add task " + task.second + "?";
+            std::string ans =
+                inquirer.add_question({"confirm", question, alx::Type::yesNo})
+                    .ask();
+            if (ans == "yes") {
+                taskList.push_back(task);
+            }
+        }
         profileManager.setTaskList(taskList);
 
-        std::cout << "Setting the timezone to Asia/Taipei\n";
-        std::string timezone = "Asia/Taipei";
+        inquirer = alx::Inquirer("timezone");
+        // std::string timezone = "Asia/Taipei";
+        std::string timezone =
+            inquirer
+                .add_question(
+                    {"type", "What is your timezone?",
+                     std::vector<std::string>{
+                         "Asia/Taipei", "UTC", "America/New_York",
+                         "Europe/London", "Asia/Tokyo", "Australia/Sydney"}})
+                .ask();
         profileManager.setTimezone(timezone);
 
         profileManager.saveProfile();
 
-        std::cout << "Configuration set successfully" << std::endl;
+        std::cout << "Congratulations! Configuration set successfully"
+                  << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return;
