@@ -9,6 +9,7 @@
 #include "ConfigManager.h"
 #include "ProfileManager.h"
 #include "utils/TimeParse.h"
+#include "utils/inquirer.h"
 
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
@@ -173,7 +174,10 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
         return;
     }
 
-    // print the task and status with id
+    auto inquirer = alx::Inquirer("TaskEdit");
+
+    // Build a list of tasks to select from
+    std::vector<std::string> taskList;
     for (int i = 0; i < tasks.size(); i++) {
         std::string dueTime = tasks[i]["due"];
         std::string title = tasks[i]["title"];
@@ -184,15 +188,18 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
         std::string iconColor = isCompleted ? GREEN : RED;
         std::string icon = isCompleted ? "[V]" : "[X]";
 
-        std::cout << std::setw(2) << i + 1 << ". " << iconColor << icon << RESET
-                  << " " << std::put_time(&time, "%Y-%m-%d") << " " << title
-                  << std::endl;
+        std::stringstream ss;
+        ss << std::setw(2) << std::to_string(i + 1) << ". " << iconColor << icon
+           << RESET << " " << std::put_time(&time, "%Y-%m-%d") << " " << title;
+        taskList.push_back(ss.str());
     }
 
-    std::cout << std::endl << "Enter the number of the task you want to edit: ";
-    int taskIndex;
-    std::cin >> taskIndex;
-    std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+    std::string selectedTaskStr =
+        inquirer.add_question({"type", "Select a task to edit:", taskList})
+            .ask();
+
+    int taskIndex =
+        std::stoi(selectedTaskStr.substr(0, selectedTaskStr.find('.')));
 
     if (taskIndex < 1 || taskIndex > tasks.size()) {
         std::cout << "Invalid task number." << std::endl;
@@ -201,20 +208,21 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
 
     const auto& task = tasks[taskIndex - 1];
 
-    std::cout << std::endl
-              << "Select an action: \n"
-              << "1. Complete task\n"
-              << "2. Undo task\n"
-              << "3. Update title\n"
-              << "4. Update due date\n"
-              << "5. Delete task\n"
-              << "Enter your choice: ";
-    int action;
-    std::cin >> action;
-    std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+    std::vector<std::string> actions = {"Complete task", "Undo task",
+                                        "Update title", "Update due date",
+                                        "Delete task"};
+    std::string actionStr =
+        inquirer.add_question({"type", "Select an action:", actions}).ask();
 
     std::string taskId = task["id"].get<std::string>();
     std::string title, dueDate;
+    int action = 0;
+    for (int i = 0; i < actions.size(); i++) {
+        if (actions[i] == actionStr) {
+            action = i + 1;
+            break;
+        }
+    }
     try {
         switch (action) {
             case 1:
@@ -224,16 +232,21 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
                 completeTask(taskId, false);
                 break;
             case 3:
-                std::cout << "Enter the new title of the task: ";
-                std::getline(std::cin, title);
+                title = inquirer
+                            .add_question(
+                                {"input", "Enter the new title of the task: "})
+                            .ask();
 
                 if (!title.empty()) {
                     updateTask(taskId, title, task["due"]);
                 }
                 break;
             case 4:
-                std::cout << "Enter the due date (YYYY-MM-DD): ";
-                std::getline(std::cin, dueDate);
+                dueDate =
+                    inquirer
+                        .add_question(
+                            {"input", "Enter the new due date (YYYY-MM-DD): "})
+                        .ask();
 
                 if (!dueDate.empty()) {
                     dueDate += "T00:00:00Z";
