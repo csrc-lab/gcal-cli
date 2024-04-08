@@ -5,6 +5,7 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <vector>
+#include <unordered_map>
 
 #include "ConfigManager.h"
 #include "ProfileManager.h"
@@ -16,8 +17,19 @@ GoogleEventsAPI::GoogleEventsAPI() {
     calendarList = profileManager.getCalendarList();
 }
 
-std::vector<std::pair<std::string, std::string>>
-GoogleEventsAPI::fetchCalendarList() {
+void printEvents(std::vector<nlohmann::json> items) {
+    for (int i = 1; i <= items.size(); i++) {
+        std::string startRFC = items[i - 1]["start"]["dateTime"];
+        std::string endRFC = items[i - 1]["end"]["dateTime"];
+        std::tm start = TimeParse::parseRFC3339(startRFC);
+        std::tm end = TimeParse::parseRFC3339(endRFC);
+        std::cout << i << ". " << std::put_time(&start, "%Y-%m-%d %H:%M")
+                  << " - " << std::put_time(&end, "%H:%M") << " : "
+                  << items[i - 1]["summary"] << std::endl;
+    }
+}
+
+std::vector<std::pair<std::string, std::string>> GoogleEventsAPI::fetchCalendarList() {
     std::string apiUrl =
         "https://www.googleapis.com/calendar/v3/users/me/calendarList";
     cpr::Response r =
@@ -54,10 +66,64 @@ void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
     std::string rfcEndDay =
         TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(daysAfter));
 
-    std::string calendarId = "primary";
-    std::string apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" +
-                         calendarId + "/events";
+    // check whether to refresh the configuration first
+    if (isRefreshConfigNeeded(rfcStartDay, rfcEndDay)) {
+        ConfigManager::refreshConfiguration();
+        googleTokens = ProfileManager().getTokens();
+    }
 
+    std::vector<std::tuple<std::string, std::string, cpr::AsyncResponse>> container{}; // calendarId, calendarName, response
+    std::unordered_map<std::string, std::tuple<std::string, std::vector<nlohmann::json>>> events{}; // key: calendarId, value: (calendarName, events)
+    int eventCount = 0;
+
+    for (auto calendar : profileManager.getCalendarList()) {
+        std::string apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" + calendar.first + "/events";
+        container.push_back(std::make_tuple(calendar.first, calendar.second, cpr::GetAsync(
+            cpr::Url{apiUrl},
+            cpr::Header{
+                {"Authorization", "Bearer " + googleTokens.token},
+                {"Accept", "application/json"}},
+            cpr::Parameters{
+                {"timeMin", rfcStartDay},
+                {"timeMax", rfcEndDay},
+                {"orderBy", "startTime"},
+                {"singleEvents", "true"}})));
+    }
+
+    for (auto& [calendarId, calendarName, res] : container) {
+        cpr::Response r = res.get();
+        if (r.status_code == 200) {
+            nlohmann::json j = nlohmann::json::parse(r.text);
+            std::vector<nlohmann::json> rawItems = j["items"].get<std::vector<nlohmann::json>>();
+            // Filter out the events with status confirmed only
+            std::vector<nlohmann::json> items;
+            std::copy_if(
+                rawItems.begin(), rawItems.end(), std::back_inserter(items),
+                [](nlohmann::json item) { return item["status"] == "confirmed"; });
+            events[calendarId] = std::make_tuple(calendarName, items);
+            eventCount += items.size();
+        } else if (r.status_code == 401) {
+            std::cerr << "Error: Refresh has performed but still get Unauthorized Error" << std::endl;
+        } else {
+            std::cerr << "Error: " << r.status_code << std::endl;
+            std::cerr << r.text << std::endl;
+        }
+    }
+    std::cout << "Below are the " << eventCount << " tasks in the last "
+              << daysBefore << " days and the following " << daysAfter
+              << " days:" << std::endl;
+
+    for (auto& [calendarId, calendarName] : profileManager.getCalendarList()) {
+        std::cout << "\033[1m" << calendarName << ":\033[0m" << std::endl;
+        if (events.find(calendarId) != events.end()) {
+            printEvents(std::get<1>(events[calendarId]));
+        }
+    }
+}
+
+bool GoogleEventsAPI::isRefreshConfigNeeded(std::string rfcStartDay, std::string rfcEndDay) {
+    auto googleTokens = profileManager.getTokens();
+    std::string apiUrl = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
     cpr::Response r =
         cpr::Get(cpr::Url{apiUrl},
                  cpr::Header{{"Authorization", "Bearer " + googleTokens.token},
@@ -66,40 +132,11 @@ void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
                                  {"timeMax", rfcEndDay},
                                  {"orderBy", "startTime"},
                                  {"singleEvents", "true"}});
-    if (r.status_code == 200) {
-        nlohmann::json j = nlohmann::json::parse(r.text);
-        std::vector<nlohmann::json> rawItems =
-            j["items"].get<std::vector<nlohmann::json>>();
-        // Filter out the events with status confirmed only
-        std::vector<nlohmann::json> items;
-        std::copy_if(
-            rawItems.begin(), rawItems.end(), std::back_inserter(items),
-            [](nlohmann::json item) { return item["status"] == "confirmed"; });
-
-        std::cout << "Below are the " << items.size() << " tasks in the last "
-                  << daysBefore << " days and the following " << daysAfter
-                  << " days:" << std::endl;
-
-        for (int i = 1; i <= items.size(); i++) {
-            std::string startRFC = items[i - 1]["start"]["dateTime"];
-            std::string endRFC = items[i - 1]["end"]["dateTime"];
-            std::tm start = TimeParse::parseRFC3339(startRFC);
-            std::tm end = TimeParse::parseRFC3339(endRFC);
-            std::cout << i << ". " << std::put_time(&start, "%Y-%m-%d %H:%M")
-                      << " - " << std::put_time(&end, "%H:%M") << " : "
-                      << items[i - 1]["summary"] << std::endl;
-        }
-    } else if (r.status_code == 401) {
-        std::cerr << "Error: Unauthorized" << std::endl;
-        ConfigManager::refreshConfiguration();
-        googleTokens = ProfileManager().getTokens();
-        list();
-    } else {
-        std::cerr << "Error: " << r.status_code << std::endl;
-        std::cerr << r.text << std::endl;
+    if (r.status_code == 401) {
+        return true;
     }
+    return false;
 }
-
 void GoogleEventsAPI::add() { insertEvent(); }
 
 void GoogleEventsAPI::insertEvent(std::string title, std::string startDateTime,

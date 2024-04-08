@@ -14,9 +14,9 @@ private:
    GoogleTokens googleTokens;
    ProfileManager profileManager;
    std::vector<std::pair<std::string, std::string>> calendarList;
+   bool isRefreshConfigNeeded(std::string rfcStartDay, std::string rfcEndDay);
 
-public:
-   GoogleEventsAPI();
+public : GoogleEventsAPI();
    GoogleEventsAPI(GoogleTokens googleTokens) : googleTokens(googleTokens){};
    std::vector<std::pair<std::string, std::string>> fetchCalendarList();
    void list() override;
