@@ -16,11 +16,12 @@ private:
    std::vector<std::pair<std::string, std::string>> calendarList;
    bool isRefreshConfigNeeded(std::string rfcStartDay, std::string rfcEndDay);
 
-public : GoogleEventsAPI();
+public: 
+   GoogleEventsAPI();
    GoogleEventsAPI(GoogleTokens googleTokens) : googleTokens(googleTokens){};
    std::vector<std::pair<std::string, std::string>> fetchCalendarList();
    void list() override;
-   void list(int daysBefore, int daysAfter);
+   void list(int daysBefore, int daysAfter, std::string keyword = "");
    void add() override;
    void insertEvent(std::string title = "", std::string startDateTime = "",
                   std::string endDateTime = "");

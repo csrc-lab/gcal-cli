@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
     bool showCompleted = true;
     int daysBefore = 7;
     int daysAfter = 7;
+    std::string keyword = "";
 
     CLI::App app{"Google Calendar CLI"};
     argv = app.ensure_utf8(argv);
@@ -37,14 +38,13 @@ int main(int argc, char **argv) {
     auto *eventApp = app.add_subcommand("event", "Manage events");
     eventApp->require_subcommand(1);
     auto eventList = eventApp->add_subcommand("ls", "List events");
-    eventList->add_option("-a,--days-after", daysAfter,
-                          "Days after today to include in the event list");
-    eventList->add_option("-b,--days-before", daysBefore,
-                          "Days before today to include in the event list");
+    eventList->add_option("-a,--days-after", daysAfter, "Days after today to include in the event list");
+    eventList->add_option("-b,--days-before", daysBefore, "Days before today to include in the event list");
+    eventList->add_option("-k, --keyword", keyword, "text search terms to find events that match these terms in the following fields: summary, description, location");
 
     eventList->callback([&]() {
         GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
-        googleEventsAPI.list(daysBefore, daysAfter);
+        googleEventsAPI.list(daysBefore, daysAfter, keyword); 
     });
     auto eventAdd = eventApp->add_subcommand("add", "Add an event");
     eventAdd->callback([]() {

@@ -60,7 +60,7 @@ std::vector<std::pair<std::string, std::string>> GoogleEventsAPI::fetchCalendarL
 }
 
 void GoogleEventsAPI::list() { list(7, 7); }
-void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
+void GoogleEventsAPI::list(int daysBefore, int daysAfter, std::string keyword) {
     std::string rfcStartDay =
         TimeParse::castToRFC3339(TimeParse::getShiftedDateTime(-daysBefore));
     std::string rfcEndDay =
@@ -76,18 +76,22 @@ void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
     std::unordered_map<std::string, std::tuple<std::string, std::vector<nlohmann::json>>> events{}; // key: calendarId, value: (calendarName, events)
     int eventCount = 0;
 
+    cpr::Header headers = {
+        {"Authorization", "Bearer " + googleTokens.token},
+        {"Accept", "application/json"}
+    };
+    cpr::Parameters params = {{"timeMin", rfcStartDay}, {"timeMax", rfcEndDay}, {"orderBy", "startTime"}, {"singleEvents", "true"}};
+    if (!keyword.empty()) {
+        params.Add({"q", keyword});
+    }
+
     for (auto calendar : profileManager.getCalendarList()) {
         std::string apiUrl = "https://www.googleapis.com/calendar/v3/calendars/" + calendar.first + "/events";
         container.push_back(std::make_tuple(calendar.first, calendar.second, cpr::GetAsync(
             cpr::Url{apiUrl},
-            cpr::Header{
-                {"Authorization", "Bearer " + googleTokens.token},
-                {"Accept", "application/json"}},
-            cpr::Parameters{
-                {"timeMin", rfcStartDay},
-                {"timeMax", rfcEndDay},
-                {"orderBy", "startTime"},
-                {"singleEvents", "true"}})));
+            headers,
+            params
+        )));
     }
 
     for (auto& [calendarId, calendarName, res] : container) {
@@ -114,8 +118,8 @@ void GoogleEventsAPI::list(int daysBefore, int daysAfter) {
               << " days:" << std::endl;
 
     for (auto& [calendarId, calendarName] : profileManager.getCalendarList()) {
-        std::cout << "\033[1m" << calendarName << ":\033[0m" << std::endl;
-        if (events.find(calendarId) != events.end()) {
+        if (events.find(calendarId) != events.end() && !std::get<1>(events[calendarId]).empty()) {
+            std::cout << "\033[1m" << calendarName << ":\033[0m" << std::endl;
             printEvents(std::get<1>(events[calendarId]));
         }
     }
