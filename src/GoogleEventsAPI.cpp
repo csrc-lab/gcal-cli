@@ -11,7 +11,7 @@
 #include "utils/TimeParse.h"
 
 GoogleEventsAPI::GoogleEventsAPI() {
-    ProfileManager profileManager;
+    profileManager = ProfileManager();
     googleTokens = profileManager.getTokens();
     calendarList = profileManager.getCalendarList();
 }
@@ -105,7 +105,7 @@ void GoogleEventsAPI::add() { insertEvent(); }
 void GoogleEventsAPI::insertEvent(std::string title, std::string startDateTime,
                                   std::string endDateTime) {
     std::string calendarId = "primary";  // default calendar
-    std::string timeZone = "Asia/Taipei";
+    std::string timeZone = profileManager.getTimezone();
 
     if (title.empty()) {
         std::cout << "Enter the title of the event: ";
@@ -146,7 +146,7 @@ void GoogleEventsAPI::insertEvent(std::string title, std::string startDateTime,
     } else if (r.status_code == 401) {
         std::cerr << "Error: Unauthorized" << std::endl;
         ConfigManager::refreshConfiguration();
-        googleTokens = ProfileManager().getTokens();
+        googleTokens = profileManager.getTokens();
         insertEvent(title, startDateTime, endDateTime);
     } else {
         std::cerr << "Error: " << r.status_code << std::endl;
