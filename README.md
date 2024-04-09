@@ -56,7 +56,8 @@ cmake --build .
 - ls
     - -a,--days-after INT         Days after today to include in the task list
     - -b,--days-before INT        Days before today to include in the task list
-    - --keyword, -k: search by title containing given keyword
+    - -k,--keyword STRING: search by title containing given keyword
+    - -v, --view STRING: view the event in the given format. STRING is case-insensitive and can be "day" or "week". Default is "day".
 - add
 - rm
 - edit
@@ -66,6 +67,7 @@ cmake --build .
     - -a,--days-after INT         Days after today to include in the task list
     - -b,--days-before INT        Days before today to include in the task list
     - -c,--show-completed BOOLEAN Whether to show completed tasks. Default is true.
+    - -v, --view STRING: view the task in the given format. STRING is case-insensitive and can be "day" or "week". Default is "day".
 - add
     - -t,--title TEXT             Title of the task
     - -d,--date TEXT              Due date of the task. The format should be YYYY-MM-DD.
