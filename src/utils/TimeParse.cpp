@@ -5,6 +5,12 @@
 #include <iomanip>
 #include <sstream>
 
+bool TimeParse::isToday(const std::tm &date) {
+    std::tm today = TimeParse::getCurrentDateTime();
+    return today.tm_year == date.tm_year && today.tm_mon == date.tm_mon &&
+           today.tm_mday == date.tm_mday;
+}
+
 std::tm TimeParse::getCurrentDateTime() {
     std::time_t t = std::time(nullptr);
     std::tm *now = std::localtime(&t);

@@ -3,9 +3,11 @@
 #include <cpr/cpr.h>
 
 #include <iostream>
+#include <map>
 #include <nlohmann/json.hpp>
 #include <vector>
 
+#include "CalendarFormatter.h"
 #include "ConfigManager.h"
 #include "ProfileManager.h"
 #include "utils/TimeParse.h"
@@ -99,9 +101,11 @@ void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
     }
     std::cout << "Below are the " << tasks.size() << " tasks in the last "
               << daysBefore << " days and the following " << daysAfter
-              << " days:" << std::endl;
+              << " days:" << std::endl
+              << std::endl;
 
     int todoCnt = 0;
+    std::map<std::tm, std::vector<std::string>, TmComparator> tasksMap;
     for (int i = 0; i < tasks.size(); i++) {
         std::string dueTime = tasks[i]["due"];
         std::string title = tasks[i]["title"];
@@ -113,10 +117,10 @@ void GoogleTasksAPI::list(bool showCompleted, int daysBefore, int daysAfter) {
         std::string icon = isCompleted ? "[V]" : "[X]";
         if (!isCompleted) todoCnt++;
 
-        std::cout << iconColor << icon << RESET << " "
-                  << std::put_time(&time, "%Y-%m-%d") << " " << title
-                  << std::endl;
+        tasksMap[time].push_back(iconColor + icon + RESET + " " + title);
     }
+
+    CalendarFormatter::dayView(tasksMap);
     std::cout << std::endl
               << "There are " << todoCnt << " uncompleted tasks." << std::endl;
 }
@@ -208,7 +212,7 @@ void GoogleTasksAPI::edit(int daysBefore, int daysAfter) {
 
     const auto& task = tasks[taskIndex - 1];
 
-    std::vector<std::string> actions = {"Complete task", "Undo task",
+    std::vector<std::string> actions = {"Complete task", "Uncomplete task",
                                         "Update title", "Update due date",
                                         "Delete task"};
     std::string actionStr =

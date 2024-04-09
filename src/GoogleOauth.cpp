@@ -105,9 +105,6 @@ GoogleTokens GoogleOauth::refreshTokens() {
         // Parse the JSON response
         auto jsonResponse = nlohmann::json::parse(r.text);
 
-        // Extract the new access token and optionally the new refresh token
-        std::cout << "New Access Token: " << jsonResponse["access_token"]
-                  << std::endl;
         this->token = jsonResponse["access_token"];
 
         // Some responses may include a new refresh token
