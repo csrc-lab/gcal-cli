@@ -1,13 +1,16 @@
 #include "ConfigManager.h"
 
+#include <condition_variable>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 
 #include "GoogleEventsAPI.h"
 #include "GoogleOauth.h"
 #include "GoogleTasksAPI.h"
 #include "GoogleTokens.h"
 #include "ProfileManager.h"
+#include "utils/httplib.h"
 #include "utils/inquirer.h"
 
 bool fileExists(const std::string& name) {
@@ -73,9 +76,39 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
               << authorization_url << std::endl
               << std::endl;
 
+    httplib::Server svr;
     std::string code;
-    code = inquirer.add_question({"input", "Enter the code from the browser"})
-               .ask();
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool code_received = false;
+
+    svr.Get("/", [&](const httplib::Request& req, httplib::Response& res) {
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            code = req.get_param_value("code");
+            code_received = true;
+        }
+        cv.notify_one();
+
+        res.set_content(
+            "Authorization successful. You can close this browser tab/window.",
+            "text/plain");
+        svr.stop();
+    });
+
+    std::thread server_thread([&svr]() { svr.listen("localhost", 9999); });
+
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock, [&] { return code_received; });
+
+    if (server_thread.joinable()) {
+        server_thread.join();
+    }
+
+    if (code.empty()) {
+        std::cerr << "Authorization failed. Please try again." << std::endl;
+        return;
+    }
 
     try {
         GoogleTokens tokens = oauth.getAccessToken(code);

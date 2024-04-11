@@ -10,7 +10,7 @@ class GoogleOauth {
    private:
     std::string clientSecret;
     std::string clientId;
-    std::string redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+    std::string redirectUri = "http://localhost:9999";
     std::vector<std::string> scopes = {
         "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/tasks"};
