@@ -30,26 +30,44 @@ int main(int argc, char **argv) {
 
     auto configSet = configApp->add_subcommand("set", "Set the configuration");
     std::string credPath;
-    configSet->add_option<std::string>("-f,--file", credPath,
-                                       "Credential file path");
+    configSet->add_option<std::string>(
+        "-f,--file", credPath,
+        "Path to the credential file. To create a credential file, follow the "
+        "steps to set up a Google OAuth 2.0 desktop application at "
+        "https://developers.google.com/identity/protocols/oauth2/native-app. "
+        "Make sure to enable both the Google Tasks API and Google Calendar API "
+        "in the API Console to ensure full functionality.");
     configSet->callback(
         [&credPath]() { ConfigManager::setConfiguration(credPath); });
 
     auto *eventApp = app.add_subcommand("event", "Manage events");
     eventApp->require_subcommand(1);
     auto eventList = eventApp->add_subcommand("ls", "List events");
-    eventList->add_option("-a,--days-after", daysAfter, "Days after today to include in the event list");
-    eventList->add_option("-b,--days-before", daysBefore, "Days before today to include in the event list");
-    eventList->add_option("-k, --keyword", keyword, "text search terms to find events that match these terms in the following fields: summary, description, location");
+    eventList->add_option("-a,--days-after", daysAfter,
+                          "Days after today to include in the event list");
+    eventList->add_option("-b,--days-before", daysBefore,
+                          "Days before today to include in the event list");
+    eventList->add_option(
+        "-k, --keyword", keyword,
+        "text search terms to find events that match these terms in the "
+        "following fields: summary, description, location");
 
     eventList->callback([&]() {
-        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
-        googleEventsAPI.list(daysBefore, daysAfter, keyword); 
+        try {
+            GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
+            googleEventsAPI.list(daysBefore, daysAfter, keyword);
+        } catch (const std::exception &e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
     });
     auto eventAdd = eventApp->add_subcommand("add", "Add an event");
     eventAdd->callback([]() {
-        GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
-        googleEventsAPI.add();
+        try {
+            GoogleEventsAPI googleEventsAPI = GoogleEventsAPI();
+            googleEventsAPI.add();
+        } catch (const std::exception &e) {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
     });
 
     auto *taskApp = app.add_subcommand("task", "Manage tasks");

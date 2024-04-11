@@ -50,12 +50,17 @@ void ConfigManager::setConfiguration(const std::string& credPath) {
         localCredPath =
             inquirer
                 .add_question(
-                    {"input", "Enter the path to the Google credential file"})
+                    {"input",
+                     "Enter the path to the Google OAuth credential file"})
                 .ask();
     }
 
     if (!fileExists(localCredPath)) {
-        std::cerr << "Error: Credential file not found" << std::endl;
+        std::cerr << "Error: Credential file not found. Please ensure you have "
+                     "followed the instructions at "
+                     "https://developers.google.com/identity/protocols/oauth2/"
+                     "native-app to create and download the credential file."
+                  << std::endl;
         return;
     }
     GoogleOauth oauth(localCredPath);

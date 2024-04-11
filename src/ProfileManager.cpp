@@ -81,7 +81,7 @@ GoogleTokens ProfileManager::getTokens() {
     if (data.token.empty()) {
         throw std::runtime_error(
             "Token is not found. Please set the configuration by running "
-            "'gcal-cli config set'.");
+            "'gcal config set'.");
     }
 
     return {data.clientId, data.clientSecret, data.token, data.refreshToken};
